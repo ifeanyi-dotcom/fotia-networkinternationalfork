@@ -1,4 +1,7 @@
 import React from 'react';
+import Burn2 from '../assets/Burn2.png';
+import Burn3 from '../assets/Burn3.png';
+import Burn1 from '../assets/Burn1.png';
 
 const ImpactSection = () => {
   return (
@@ -28,9 +31,9 @@ const ImpactSection = () => {
 
           {/* Right Column: Image Thumbnails */}
           <div className="md:w-1/2 grid grid-cols-2 grid-rows-2 gap-4">
-              <img src="https://via.placeholder.com/300x200?text=Altar+Moments" alt="Altar moments" className="rounded-lg shadow-lg object-cover w-full h-full col-span-1 row-span-1"/>
-              <img src="https://via.placeholder.com/300x400?text=Interactions" alt="Interactions" className="rounded-lg shadow-lg object-cover w-full h-full col-span-1 row-span-2"/>
-              <img src="https://via.placeholder.com/300x200?text=Worship+Nights" alt="Worship nights" className="rounded-lg shadow-lg object-cover w-full h-full col-span-1 row-span-1"/>
+              <img src={Burn2} alt="Altar moments" className="rounded-lg shadow-lg object-cover w-full h-full col-span-1 row-span-1"/>
+              <img src={Burn3} alt="Interactions" className="rounded-lg shadow-lg object-cover w-full h-full col-span-1 row-span-2"/>
+              <img src={Burn1} alt="Worship nights" className="rounded-lg shadow-lg object-cover w-full h-full col-span-1 row-span-1"/>
           </div>
         </div>
       </div>
