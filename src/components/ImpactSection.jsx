@@ -16,11 +16,11 @@ const ImpactSection = () => {
             <ul className="space-y-4">
               <li className="flex items-start">
                 <span className="text-gold font-bold mr-3">✓</span>
-                <p className="text-gray-700"><strong>City-wide gospel crusades</strong> that gather thousands to hear the good news.</p>
+                <p className="text-gray-700"><strong>Nation-wide gospel crusades</strong> that gather thousands to hear the good news.</p>
               </li>
               <li className="flex items-start">
                 <span className="text-gold font-bold mr-3">✓</span>
-                <p className="text-gray-700"><strong>Prayer & worship nights</strong> that unite believers and usher in the presence of God.</p>
+                <p className="text-gray-700"><strong>Prayer Meetings</strong> that unite believers and usher in the presence of God.</p>
               </li>
               <li className="flex items-start">
                 <span className="text-gold font-bold mr-3">✓</span>
