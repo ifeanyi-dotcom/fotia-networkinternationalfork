@@ -1,27 +1,4 @@
-import { MongoClient } from 'mongodb';
-
-const uri = process.env.MONGODB_URI;
-const dbName = 'pledge2025';
-
-let cachedClient = null;
-let cachedDb = null;
-
-async function connectToDatabase() {
-    if (cachedClient && cachedDb) {
-        return { client: cachedClient, db: cachedDb };
-    }
-
-    const client = await MongoClient.connect(uri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    });
-
-    const db = client.db(dbName);
-    cachedClient = client;
-    cachedDb = db;
-
-    return { client, db };
-}
+import { connectToDatabase } from './utils/db.js';
 
 export default async function handler(req, res) {
     // Enable CORS

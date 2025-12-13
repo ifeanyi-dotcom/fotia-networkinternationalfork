@@ -16,6 +16,12 @@ export default defineConfig({
     },
     server: {
         historyApiFallback: true,
+        proxy: {
+            '/api': {
+                target: 'http://localhost:3001',
+                changeOrigin: true,
+            }
+        }
     },
     preview: {
         port: 3000,
