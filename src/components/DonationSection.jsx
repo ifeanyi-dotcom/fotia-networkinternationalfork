@@ -2,269 +2,338 @@ import React, { useState } from 'react';
 
 const DonationSection = () => {
     const [donationType, setDonationType] = useState('one-time');
-    const [selectedAmount, setSelectedAmount] = useState('');
+    const [copiedBank, setCopiedBank] = useState(false);
 
-    const amountButtons = [
-        { label: '₦10,000', value: '10000' },
-        { label: '₦25,000', value: '25000' },
-        { label: '₦50,000', value: '50000' },
-        { label: 'Custom', value: 'custom' }
-    ];
+    const copyBankDetails = () => {
+        navigator.clipboard.writeText('1834897295');
+        setCopiedBank(true);
+        setTimeout(() => setCopiedBank(false), 2000);
+    };
 
     return (
         <section className="py-20 bg-gray-50">
             <div className="container mx-auto px-4 max-w-7xl">
                 <div className="text-center mb-12">
                     <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                        Give a gift to Fotia Network International
+                        Give a Gift to Fotia Network International
                     </h2>
                     <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-                        Choose an amount, select one-time or monthly, and complete your secure card or bank transfer gift in seconds.
+                        Support our mission through a one-time gift or become a monthly partner. Every contribution makes a difference.
                     </p>
                 </div>
 
                 <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
 
-                    {/* Left Column: Donation Form */}
+                    {/* Left Column: Giving Options */}
                     <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-                        {/* Secure indicators */}
-                        <div className="flex items-center justify-between mb-6 text-sm text-gray-500">
-                            <div className="flex items-center gap-2">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                                </svg>
-                                <span>Secure, encrypted processing</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                                </svg>
-                                <span>Receipts emailed instantly</span>
-                            </div>
-                        </div>
-
                         {/* One-time vs Monthly Toggle */}
-                        <div className="flex bg-gray-100 rounded-xl p-1 mb-8">
+                        <div className="grid grid-cols-2 gap-4 mb-8">
                             <button
                                 onClick={() => setDonationType('one-time')}
-                                className={`flex-1 py-3 px-4 font-semibold rounded-lg transition-all ${
+                                className={`relative py-6 px-4 rounded-xl border-2 transition-all ${
                                     donationType === 'one-time'
-                                        ? 'bg-white text-gray-900 shadow-md'
-                                        : 'text-gray-600 hover:text-gray-900'
+                                        ? 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-500 shadow-lg'
+                                        : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-md'
                                 }`}
                             >
-                                One-Time
+                                {donationType === 'one-time' && (
+                                    <div className="absolute top-3 right-3">
+                                        <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                )}
+                                <div className="flex flex-col items-center text-center">
+                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${
+                                        donationType === 'one-time'
+                                            ? 'bg-blue-500'
+                                            : 'bg-gray-200'
+                                    }`}>
+                                        <svg className={`w-6 h-6 ${donationType === 'one-time' ? 'text-white' : 'text-gray-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <h4 className={`font-bold text-base mb-1 ${
+                                        donationType === 'one-time' ? 'text-blue-900' : 'text-gray-700'
+                                    }`}>One-Time Gift</h4>
+                                    <p className={`text-xs ${
+                                        donationType === 'one-time' ? 'text-blue-700' : 'text-gray-500'
+                                    }`}>Make an instant impact</p>
+                                </div>
                             </button>
+
                             <button
                                 onClick={() => setDonationType('monthly')}
-                                className={`flex-1 py-3 px-4 font-semibold rounded-lg transition-all ${
+                                className={`relative py-6 px-4 rounded-xl border-2 transition-all ${
                                     donationType === 'monthly'
-                                        ? 'bg-white text-gray-900 shadow-md'
-                                        : 'text-gray-600 hover:text-gray-900'
+                                        ? 'bg-gradient-to-br from-yellow-50 to-orange-100 border-yellow-500 shadow-lg'
+                                        : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-md'
                                 }`}
                             >
-                                Monthly Pledge
+                                {donationType === 'monthly' && (
+                                    <div className="absolute top-3 right-3">
+                                        <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                )}
+                                <div className="flex flex-col items-center text-center">
+                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${
+                                        donationType === 'monthly'
+                                            ? 'bg-yellow-500'
+                                            : 'bg-gray-200'
+                                    }`}>
+                                        <svg className={`w-6 h-6 ${donationType === 'monthly' ? 'text-white' : 'text-gray-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                        </svg>
+                                    </div>
+                                    <h4 className={`font-bold text-base mb-1 ${
+                                        donationType === 'monthly' ? 'text-yellow-900' : 'text-gray-700'
+                                    }`}>Monthly Partner</h4>
+                                    <p className={`text-xs ${
+                                        donationType === 'monthly' ? 'text-yellow-700' : 'text-gray-500'
+                                    }`}>Sustain the mission</p>
+                                </div>
                             </button>
                         </div>
 
-                        {/* Amount Selection */}
-                        <div className="mb-6">
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">Amount</label>
-                            <div className="grid grid-cols-4 gap-3 mb-4">
-                                {amountButtons.map(amount => (
-                                    <button
-                                        key={amount.value}
-                                        onClick={() => setSelectedAmount(amount.value)}
-                                        className={`py-3 px-2 text-sm font-semibold rounded-lg border-2 transition-all ${
-                                            selectedAmount === amount.value
-                                                ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
-                                                : 'border-gray-200 hover:border-gray-300'
-                                        }`}
-                                    >
-                                        {amount.label}
-                                    </button>
-                                ))}
-                            </div>
-                            <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
-                                <input
-                                    type="text"
-                                    className="w-full pl-8 pr-4 py-3 text-lg border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
-                                    placeholder="50,000"
-                                />
-                            </div>
-                        </div>
+                        {donationType === 'one-time' ? (
+                            // One-Time Gift Options
+                            <div>
+                                <h3 className="text-xl font-bold text-gray-900 mb-4">Choose Your Giving Method</h3>
 
-                        {/* Monthly Options */}
-                        {donationType === 'monthly' && (
-                            <div className="mb-6">
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Preferred debit day <span className="text-gray-400 font-normal">For monthly pledges</span>
-                                </label>
-                                <select className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none bg-white">
-                                    <option>26th of each month</option>
-                                    <option>1st of each month</option>
-                                    <option>15th of each month</option>
-                                </select>
+                                {/* Paystack Option */}
+                                <div className="mb-6 p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-400 rounded-xl">
+                                    <div className="flex items-start gap-4 mb-4">
+                                        <div className="bg-blue-500 rounded-lg p-3 flex-shrink-0">
+                                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 mb-1">Card Payment (Paystack)</h4>
+                                            <p className="text-sm text-blue-700">Instant & Secure</p>
+                                        </div>
+                                    </div>
+                                    <a
+                                        href="YOUR_PAYSTACK_LINK_HERE"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-all text-center"
+                                    >
+                                        Give via Paystack →
+                                    </a>
+                                    <p className="text-xs text-blue-700 mt-2 text-center">
+                                        You'll be redirected to our secure Paystack page
+                                    </p>
+                                </div>
+
+                                {/* Bank Transfer Option */}
+                                <div className="p-6 bg-gray-50 border-2 border-gray-200 rounded-xl">
+                                    <div className="flex items-start gap-4 mb-4">
+                                        <div className="bg-gray-700 rounded-lg p-3 flex-shrink-0">
+                                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 mb-1">Bank Transfer</h4>
+                                            <p className="text-sm text-gray-600">Direct to our account</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3 mb-4">
+                                        <div className="bg-white p-4 rounded-lg border border-gray-300">
+                                            <div className="flex justify-between items-center">
+                                                <div>
+                                                    <p className="text-sm text-gray-600">Bank Name</p>
+                                                    <p className="font-bold text-gray-900">Access Bank</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white p-4 rounded-lg border border-gray-300">
+                                            <div className="flex justify-between items-center">
+                                                <div>
+                                                    <p className="text-sm text-gray-600">Account Number</p>
+                                                    <p className="font-bold text-gray-900 font-mono text-lg">1834897295</p>
+                                                </div>
+                                                <button
+                                                    onClick={copyBankDetails}
+                                                    className="text-sm font-semibold text-yellow-600 hover:text-yellow-700 px-4 py-2 rounded-lg hover:bg-yellow-50 transition-colors"
+                                                >
+                                                    {copiedBank ? '✓ Copied!' : 'Copy'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white p-4 rounded-lg border border-gray-300">
+                                            <div>
+                                                <p className="text-sm text-gray-600">Account Name</p>
+                                                <p className="font-bold text-gray-900">Fotia Network Ministries</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                        <p className="text-sm text-blue-900">
+                                            <strong>After transferring,</strong> please fill the form on the right so we can send you a receipt and thank you personally.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            // Monthly Partner Information
+                            <div>
+                                <h3 className="text-xl font-bold text-gray-900 mb-4">Become a Monthly Partner</h3>
+                                <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-400 rounded-xl p-4 sm:p-6 mb-6">
+                                    {/* Header Section */}
+                                    <div className="text-center mb-4">
+                                        <div className="inline-flex bg-yellow-500 rounded-lg p-3 mb-3">
+                                            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                            </svg>
+                                        </div>
+                                        <h4 className="font-bold text-lg text-gray-900 mb-2">Join Our Revival Partners</h4>
+                                        <p className="text-gray-700 text-sm leading-relaxed">
+                                            Your consistent monthly support fuels ongoing crusades, prayer meetings, and outreaches.
+                                            Partner with us to see nations transformed!
+                                        </p>
+                                    </div>
+
+                                    {/* Benefits List */}
+                                    <ul className="space-y-2.5">
+                                        <li className="flex items-start gap-3 text-gray-700 text-sm">
+                                            <svg className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            <span>Monthly updates on ministry impact</span>
+                                        </li>
+                                        <li className="flex items-start gap-3 text-gray-700 text-sm">
+                                            <svg className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            <span>Prayer points and testimonies</span>
+                                        </li>
+                                        <li className="flex items-start gap-3 text-gray-700 text-sm">
+                                            <svg className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            <span>Personal connection with our team</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+                                    <p className="text-gray-700 mb-4">
+                                        To set up a monthly partnership, please fill out the form on the right with your preferred giving amount.
+                                        Our team will contact you to arrange the details.
+                                    </p>
+                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                        <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        <span>Secure & flexible - adjust or cancel anytime</span>
+                                    </div>
+                                </div>
                             </div>
                         )}
-
-                        {/* Country Selection */}
-                        <div className="mb-6">
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Country</label>
-                            <select className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none bg-white">
-                                <option>Nigeria</option>
-                                <option>United States</option>
-                                <option>United Kingdom</option>
-                                <option>Canada</option>
-                            </select>
-                        </div>
-
-                        {/* Card Details */}
-                        <div className="space-y-4 mb-6">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Card details</label>
-                                <input
-                                    type="text"
-                                    placeholder="Full name as shown on card"
-                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
-                                />
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Card number"
-                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
-                            />
-                            <div className="grid grid-cols-2 gap-4">
-                                <input
-                                    type="text"
-                                    placeholder="MM / YY"
-                                    className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="CVV"
-                                    className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
-                                />
-                            </div>
-                            <div className="flex items-center gap-3 pt-2">
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                    <span className="font-medium">We accept:</span>
-                                </div>
-                                <div className="flex gap-2">
-                                    <div className="w-10 h-7 bg-blue-600 rounded flex items-center justify-center text-white text-xs font-bold">VISA</div>
-                                    <div className="w-10 h-7 bg-red-600 rounded flex items-center justify-center text-white text-xs font-bold">MC</div>
-                                    <div className="w-10 h-7 bg-blue-800 rounded flex items-center justify-center text-white text-xs font-bold">VRV</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl">
-                            Give Now
-                        </button>
-
-                        {/* Note about receipts */}
-                        <p className="text-xs text-gray-500 text-center mt-4">
-                            You'll receive an email receipt after each successful donation.
-                        </p>
-
-                        {/* Bank Transfer Section */}
-                        <div className="mt-8 pt-8 border-t border-gray-200">
-                            <div className="text-center mb-4">
-                                <span className="text-sm font-semibold text-gray-700">Prefer Bank Transfer?</span>
-                                <p className="text-xs text-gray-500 mt-1">Use the details below and tell us once done</p>
-                            </div>
-                            <div className="space-y-3">
-
-                                <div className="flex justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                    <div>
-                                        <p className="font-bold text-gray-900">Access Bank • NGN</p>
-                                        <p className="text-gray-600 font-mono">1834897295</p>
-                                        <p className="text-xs text-gray-500">Fotia Network Ministries</p>
-                                    </div>
-                                    <button className="text-sm font-semibold text-yellow-600 hover:text-yellow-700 px-4 py-2 rounded-lg hover:bg-yellow-50 transition-colors">
-                                        Copy
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
-                    {/* Right Column: Personal Details */}
+                    {/* Right Column: Contact Form */}
                     <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Share your details with us</h3>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Let Us Connect With You</h3>
                         <p className="text-gray-600 mb-6">
-                            Help us track your giving, send receipts, and keep you updated on what your giving is doing.
+                            {donationType === 'one-time'
+                                ? "Share your details so we can send you a receipt and thank you personally."
+                                : "Tell us about your partnership commitment and we'll reach out to set everything up."
+                            }
                         </p>
 
                         <div className="space-y-5">
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Full name</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Full name *</label>
                                 <input
                                     type="text"
                                     placeholder="Enter your full name"
                                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
+                                    required
                                 />
                             </div>
 
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Email address <span className="text-gray-400 font-normal">For receipts and updates</span>
+                                    Email address *
                                 </label>
                                 <input
                                     type="email"
                                     placeholder="name@example.com"
                                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
+                                    required
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Phone / WhatsApp</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Phone / WhatsApp *</label>
                                 <input
                                     type="tel"
-                                    placeholder="Include country code (e.g. +234...)"
+                                    placeholder="+234..."
                                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
+                                    required
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Best way to reach you</label>
-                                <select className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none bg-white">
-                                    <option value="">Select preference</option>
-                                    <option>Email</option>
-                                    <option>WhatsApp</option>
-                                    <option>Phone call</option>
-                                </select>
-                            </div>
+                            {donationType === 'monthly' && (
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Monthly commitment amount *
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g., 10,000"
+                                            className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
+                                            required
+                                        />
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">Enter the amount you'd like to give monthly</p>
+                                </div>
+                            )}
+
+                            {donationType === 'one-time' && (
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Amount given (optional)
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g., 50,000"
+                                            className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">Helps us track and acknowledge your gift</p>
+                                </div>
+                            )}
 
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                                     Prayer request (optional)
                                 </label>
                                 <textarea
-                                    placeholder="Share how we can agree with you in prayer"
+                                    placeholder="Share how we can pray for you"
                                     rows="4"
                                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none resize-none"
                                 ></textarea>
                             </div>
 
-                            <div className="flex items-start gap-3 pt-2">
-                                <input
-                                    type="checkbox"
-                                    id="bank-transfer-check"
-                                    className="mt-1 w-5 h-5 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500"
-                                />
-                                <label htmlFor="bank-transfer-check" className="text-sm text-gray-600 leading-tight">
-                                    I have given or will give by bank transfer. Please reconcile my gift and send me a receipt.
-                                </label>
-                            </div>
-                        </div>
+                            <button className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl">
+                                Submit Details
+                            </button>
 
-                        {/* Info box */}
-                        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                            <p className="text-sm text-blue-900">
-                                <strong>Note:</strong> You can submit this form before or after you complete the pledge. Our team will follow up with you personally.
+                            <p className="text-xs text-gray-500 text-center">
+                                {donationType === 'one-time'
+                                    ? "We'll send you a receipt and thank you message within 24 hours."
+                                    : "Our team will contact you within 24 hours to finalize your partnership."
+                                }
                             </p>
                         </div>
                     </div>
