@@ -222,7 +222,11 @@ const DonationSection = () => {
 
                                 <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
                                     <p className="text-gray-700 mb-4">
-                                        To set up a monthly partnership, please fill out the form on the right with your preferred giving amount.
+                                        To set up a monthly partnership
+                                        <span className="inline-block bg-yellow-500/20 text-orange-800 px-2 py-0.5 rounded font-semibold">
+                                            please fill out the form
+                                        </span>
+                                        with your preferred giving amount.
                                         Our team will contact you to arrange the details.
                                     </p>
                                     <div className="flex items-center gap-2 text-sm text-gray-600">

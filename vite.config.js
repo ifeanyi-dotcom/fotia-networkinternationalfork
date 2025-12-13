@@ -5,4 +5,20 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [react(), tailwindcss()],
+    build: {
+        outDir: 'dist',
+        assetsDir: 'assets',
+        rollupOptions: {
+            output: {
+                manualChunks: undefined,
+            }
+        }
+    },
+    server: {
+        historyApiFallback: true,
+    },
+    preview: {
+        port: 3000,
+        strictPort: false,
+    }
 })
