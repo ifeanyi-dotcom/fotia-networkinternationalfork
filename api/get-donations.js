@@ -44,16 +44,28 @@ export default async function handler(req, res) {
         const { db } = await connectToDatabase();
         const collection = db.collection('donations');
 
-        const { donationType } = req.query;
+        const { donationType, page = 1, limit = 10, search } = req.query; // Added search
         let query = {};
 
         if (donationType && (donationType === 'one-time' || donationType === 'monthly')) {
             query.donationType = donationType;
         }
 
-        const donations = await collection.find(query).sort({ createdAt: -1 }).toArray();
+        // Add search query
+        if (search) {
+            query.fullName = { $regex: search, $options: 'i' }; // Case-insensitive search
+        }
 
-        res.status(200).json({ donations });
+        const totalDonations = await collection.countDocuments(query); // Get total count before applying limit/skip
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const donations = await collection.find(query)
+                                        .sort({ createdAt: -1 })
+                                        .skip(skip)
+                                        .limit(parseInt(limit))
+                                        .toArray();
+
+        res.status(200).json({ donations, totalDonations }); // Return total count
     } catch (error) {
         console.error('Database error in get-donations:', error);
         res.status(500).json({

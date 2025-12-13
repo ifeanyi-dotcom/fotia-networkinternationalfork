@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import LazyImage from './LazyImage';
 import Crusade1 from '../assets/Crusade1.png';
 import Crusade2 from '../assets/Crusade2.jpg';
 import Crusade3 from '../assets/Crusade3.png';
@@ -21,7 +22,7 @@ const Hero = () => {
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentSlide((prev) => (prev + 1) % images.length);
-        }, 5000); // Change slide every 5 seconds
+        }, 5000);
 
         return () => clearInterval(timer);
     }, []);
@@ -32,7 +33,7 @@ const Hero = () => {
 
     return (
         <section className="relative bg-gray-900 h-[600px] flex items-center justify-center text-center overflow-hidden">
-            {/* Carousel Background Images */}
+            {/* Carousel Background Images with Lazy Loading */}
             <div className="absolute inset-0">
                 {images.map((img, index) => (
                     <div
@@ -41,11 +42,16 @@ const Hero = () => {
                             index === currentSlide ? 'opacity-100' : 'opacity-0'
                         }`}
                     >
-                        <img
-                            src={img}
-                            alt={`Crusade ${index + 1}`}
-                            className="w-full h-full object-cover"
-                        />
+                        {/* Only load images that are near the current slide */}
+                        {Math.abs(index - currentSlide) <= 1 || index === 0 ? (
+                            <LazyImage
+                                src={img}
+                                alt={`Crusade ${index + 1}`}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-gray-800"></div>
+                        )}
                     </div>
                 ))}
                 {/* Gradient Overlay */}
@@ -85,7 +91,7 @@ const Hero = () => {
                     ))}
                 </div>
             </div>
-			
+
             {/* Navigation Arrows */}
             <button
                 onClick={() => goToSlide((currentSlide - 1 + images.length) % images.length)}
