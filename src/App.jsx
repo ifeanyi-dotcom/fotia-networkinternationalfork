@@ -1,20 +1,29 @@
 import React from 'react';
+import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import DonationSection from './components/DonationSection';
 import ImpactSection from './components/ImpactSection';
 import Footer from './components/Footer';
+import AdminDashboard from './components/admindashboard.jsx';
+
+const MainLayout = () => (
+    <div className="bg-white">
+        <Header />
+        <main>
+            <Hero />
+            <DonationSection />
+            <ImpactSection />
+        </main>
+        <Footer />
+    </div>
+);
 
 export default function App() {
-  return (
-    <div className="bg-white">
-      <Header />
-      <main>
-        <Hero />
-        <DonationSection />
-        <ImpactSection />
-      </main>
-      <Footer />
-    </div>
-  );
+    return (
+        <Routes>
+            <Route path="/" element={<MainLayout />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+        </Routes>
+    );
 }

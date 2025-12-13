@@ -3,11 +3,66 @@ import React, { useState } from 'react';
 const DonationSection = () => {
     const [donationType, setDonationType] = useState('one-time');
     const [copiedBank, setCopiedBank] = useState(false);
+    const [formData, setFormData] = useState({
+        fullName: '',
+        email: '',
+        phone: '',
+        amount: '',
+        prayerRequest: ''
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitStatus, setSubmitStatus] = useState(null);
 
     const copyBankDetails = () => {
         navigator.clipboard.writeText('1834897295');
         setCopiedBank(true);
         setTimeout(() => setCopiedBank(false), 2000);
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        setSubmitStatus(null);
+
+        try {
+            const response = await fetch('/api/donations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ...formData,
+                    donationType
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setSubmitStatus({ type: 'success', message: 'Thank you! We\'ve received your information and will be in touch soon.' });
+                setFormData({
+                    fullName: '',
+                    email: '',
+                    phone: '',
+                    amount: '',
+                    prayerRequest: ''
+                });
+            } else {
+                setSubmitStatus({ type: 'error', message: data.error || 'Something went wrong. Please try again.' });
+            }
+        } catch (error) {
+            setSubmitStatus({ type: 'error', message: error.message || 'Network error. Please check your connection and try again.' });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -250,11 +305,22 @@ const DonationSection = () => {
                             }
                         </p>
 
-                        <div className="space-y-5">
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            {submitStatus && (
+                                <div className={`p-3 rounded-md text-center ${
+                                    submitStatus.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                }`}>
+                                    {submitStatus.message}
+                                </div>
+                            )}
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Full name *</label>
+                                <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700 mb-2">Full name *</label>
                                 <input
                                     type="text"
+                                    id="fullName"
+                                    name="fullName"
+                                    value={formData.fullName}
+                                    onChange={handleInputChange}
                                     placeholder="Enter your full name"
                                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
                                     required
@@ -262,11 +328,15 @@ const DonationSection = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
                                     Email address *
                                 </label>
                                 <input
                                     type="email"
+                                    id="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleInputChange}
                                     placeholder="name@example.com"
                                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
                                     required
@@ -274,9 +344,13 @@ const DonationSection = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Phone / WhatsApp *</label>
+                                <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">Phone / WhatsApp *</label>
                                 <input
                                     type="tel"
+                                    id="phone"
+                                    name="phone"
+                                    value={formData.phone}
+                                    onChange={handleInputChange}
                                     placeholder="+234..."
                                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
                                     required
@@ -292,6 +366,10 @@ const DonationSection = () => {
                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
                                         <input
                                             type="text"
+                                            id="amount"
+                                            name="amount"
+                                            value={formData.amount}
+                                            onChange={handleInputChange}
                                             placeholder="e.g., 10,000"
                                             className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
                                             required
@@ -310,6 +388,10 @@ const DonationSection = () => {
                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
                                         <input
                                             type="text"
+                                            id="amount"
+                                            name="amount"
+                                            value={formData.amount}
+                                            onChange={handleInputChange}
                                             placeholder="e.g., 50,000"
                                             className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
                                         />
@@ -323,14 +405,22 @@ const DonationSection = () => {
                                     Prayer request (optional)
                                 </label>
                                 <textarea
+                                    id="prayerRequest"
+                                    name="prayerRequest"
+                                    value={formData.prayerRequest}
+                                    onChange={handleInputChange}
                                     placeholder="Share how we can pray for you"
                                     rows="4"
                                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none resize-none"
                                 ></textarea>
                             </div>
 
-                            <button className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl">
-                                Submit Details
+                            <button
+                                type="submit"
+                                className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl"
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Submitting...' : 'Submit Details'}
                             </button>
 
                             <p className="text-xs text-gray-500 text-center">
@@ -339,7 +429,7 @@ const DonationSection = () => {
                                     : "Our team will contact you within 24 hours to finalize your partnership."
                                 }
                             </p>
-                        </div>
+                        </form>
                     </div>
 
                 </div>

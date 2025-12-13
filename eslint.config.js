@@ -7,6 +7,20 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 export default defineConfig([
   globalIgnores(['dist']),
   {
+    files: ['api/*.js'], // Target files in the api directory
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.node, // Enable Node.js globals
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+      },
+    },
+    rules: {
+      // Any specific rules for API files, if needed
+    },
+  },
+  {
     files: ['**/*.{js,jsx}'],
     extends: [
       js.configs.recommended,
