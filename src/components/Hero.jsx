@@ -10,13 +10,13 @@ import Crusade8 from '../assets/Crusade8.png';
 import Crusade9 from '../assets/Crusade9.png';
 import Crusade10 from '../assets/Crusade10.png';
 
+const images = [
+    Crusade1, Crusade2, Crusade3, Crusade4, Crusade5,
+    Crusade6, Crusade7, Crusade8, Crusade9, Crusade10
+];
+
 const Hero = () => {
     const [currentSlide, setCurrentSlide] = useState(0);
-
-    const images = [
-        Crusade1, Crusade2, Crusade3, Crusade4, Crusade5,
-        Crusade6, Crusade7, Crusade8, Crusade9, Crusade10
-    ];
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -85,11 +85,11 @@ const Hero = () => {
                     ))}
                 </div>
             </div>
-
+			
             {/* Navigation Arrows */}
             <button
                 onClick={() => goToSlide((currentSlide - 1 + images.length) % images.length)}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-3 rounded-full transition-all"
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-3 rounded-full transition-all hidden md:block"
                 aria-label="Previous slide"
             >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,7 +98,7 @@ const Hero = () => {
             </button>
             <button
                 onClick={() => goToSlide((currentSlide + 1) % images.length)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-3 rounded-full transition-all"
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-3 rounded-full transition-all hidden md:block"
                 aria-label="Next slide"
             >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

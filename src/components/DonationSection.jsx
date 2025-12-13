@@ -116,7 +116,7 @@ const DonationSection = () => {
                                         </div>
                                     </div>
                                     <a
-                                        href="YOUR_PAYSTACK_LINK_HERE"
+                                        href="https://paystack.shop/pay/fotiacrusade"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-all text-center"
