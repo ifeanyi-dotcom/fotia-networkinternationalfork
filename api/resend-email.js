@@ -1,7 +1,6 @@
-import resend from './utils/resend.js';
+import { sendEmail } from './utils/skrybe.js';
 import clientPromise from './utils/db.js';
 import { ObjectId } from 'mongodb';
-import { getPaystackLink, isPresetAmount } from './utils/paystack-links.js';
 
 // Simple HTML email templates (same as donations.js)
 const generateOneTimeEmail = (donorName, amount) => {
@@ -146,7 +145,7 @@ const generateMonthlyEmail = (donorName, amount, paystackLink, isCustomAmount) =
                                 <strong>Fotia Network International</strong>
                             </p>
                             <p style="color: #9ca3af; font-size: 12px; margin: 5px 0;">
-                                Questions? Reply to this email or contact us at partner.fotianetwork.org
+                                Questions? Reply to this email or contact us at fotianetwork@gmail.com
                             </p>
                             <p style="color: #9ca3af; font-size: 12px; margin: 5px 0;">
                                 © 2026 Fotia Network International. All rights reserved.
@@ -198,35 +197,28 @@ export default async function handler(req, res) {
         // Parse the amount from database (remove commas)
         const parsedAmount = donation.amount ? parseInt(donation.amount.toString().replace(/,/g, '')) : 0;
 
-        // Generate email based on donation type
-        let emailHtml;
-        let subject;
-
-        if (donation.donationType === 'one-time') {
-            emailHtml = generateOneTimeEmail(
-                donation.fullName.split(' ')[0],
-                parsedAmount
-            );
-            subject = 'Thank You for Your Gift to Fotia Network!';
-        } else {
-            const paystackLink = getPaystackLink(parsedAmount);
-            const isCustom = !isPresetAmount(parsedAmount);
-
-            emailHtml = generateMonthlyEmail(
-                donation.fullName.split(' ')[0],
-                parsedAmount,
-                paystackLink,
-                isCustom
-            );
-            subject = 'Welcome to the Fotia Partner Family!';
+        // Only send emails for one-time donations
+        if (donation.donationType !== 'one-time') {
+            return res.status(400).json({
+                success: false,
+                error: 'Email resend is only available for one-time donations'
+            });
         }
 
-        // Send email via Resend
-        const emailResponse = await resend.emails.send({
-            from: 'Fotia Network <partner.fotianetwork.org>',
-            to: [donation.email],
-            subject: subject,
+        // Generate email for one-time donor
+        const emailHtml = generateOneTimeEmail(
+            donation.fullName.split(' ')[0],
+            parsedAmount
+        );
+
+        // Send email via Skrybe
+        const emailResponse = await sendEmail({
+            to: donation.email,
+            subject: 'Thank You for Your Gift to Fotia Network!',
             html: emailHtml,
+            fromName: 'Fotia Network',
+            fromEmail: 'admin@fotianetwork.org',
+            replyTo: 'fotianetwork@gmail.com'
         });
 
         // Update donation record with email status
@@ -235,7 +227,7 @@ export default async function handler(req, res) {
             {
                 $set: {
                     emailSent: true,
-                    emailId: emailResponse.id,
+                    emailProvider: 'skrybe',
                     emailSentAt: new Date(),
                     emailError: null,
                 },
@@ -244,8 +236,7 @@ export default async function handler(req, res) {
 
         return res.status(200).json({
             success: true,
-            emailId: emailResponse.id,
-            message: 'Email sent successfully'
+            message: 'Email sent successfully via Skrybe'
         });
 
     } catch (error) {

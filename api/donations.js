@@ -1,6 +1,5 @@
 import clientPromise from './utils/db.js';
-import resend from './utils/resend.js';
-import { getPaystackLink, isPresetAmount } from './utils/paystack-links.js';
+import { sendEmail } from './utils/skrybe.js';
 
 // Simple HTML email templates
 const generateOneTimeEmail = (donorName, amount) => {
@@ -145,7 +144,7 @@ const generateMonthlyEmail = (donorName, amount, paystackLink, isCustomAmount) =
                                 <strong>Fotia Network International</strong>
                             </p>
                             <p style="color: #9ca3af; font-size: 12px; margin: 5px 0;">
-                                Questions? Reply to this email or contact us at partner.fotianetwork.org
+                                Questions? Reply to this email or contact us at partners@fotianetwork.org
                             </p>
                             <p style="color: #9ca3af; font-size: 12px; margin: 5px 0;">
                                 © 2026 Fotia Network International. All rights reserved.
@@ -216,22 +215,23 @@ export default async function handler(req, res) {
                     fullName.split(' ')[0], // First name only
                     parsedAmount
                 );
-                const subject = 'Thank You for Your Gift to Fotia Network!';
 
-                // Send email via Resend
-                const emailResult = await resend.emails.send({
-                    from: 'Fotia Network <partner.fotianetwork.org>',
-                    to: [email],
-                    subject: subject,
+                // Send email via Skrybe
+                const emailResult = await sendEmail({
+                    to: email,
+                    subject: 'Thank You for Your Gift to Fotia Network!',
                     html: emailHtml,
+                    fromName: 'Fotia Network',
+                    fromEmail: 'admin@fotianetwork.org',
+                    replyTo: 'fotianetwork@gmail.com'
                 });
 
-                console.log('Email sent successfully:', emailResult);
+                console.log('Email sent successfully via Skrybe:', emailResult);
 
                 // Update donation record to mark email as sent
                 await donations.updateOne(
                     { _id: result.insertedId },
-                    { $set: { emailSent: true, emailId: emailResult.id, emailSentAt: new Date() } }
+                    { $set: { emailSent: true, emailProvider: 'skrybe', emailSentAt: new Date() } }
                 );
 
             } catch (emailError) {
