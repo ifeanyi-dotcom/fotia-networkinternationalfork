@@ -65,7 +65,7 @@ export const MonthlyPartnerEmail = ({
                         <strong>Fotia Network International</strong>
                     </Text>
                     <Text style={footerSmall}>
-                        Questions? Reply to this email or contact us at partners@fotianetwork.org
+                        Questions? Reply to this email or contact us at partner.fotianetwork.org
                     </Text>
                     <Text style={footerSmall}>
                         © 2026 Fotia Network International. All rights reserved.

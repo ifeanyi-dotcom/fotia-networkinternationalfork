@@ -28,43 +28,100 @@ const DonationSection = () => {
         }));
     };
 
+    // Get the appropriate Paystack link based on amount
+    const getPaystackLink = (amount) => {
+        const PAYSTACK_LINKS = {
+            10000: 'https://paystack.shop/pay/10fotiamonthly',
+            20000: 'https://paystack.shop/pay/20fotiamonthly',
+            50000: 'https://paystack.shop/pay/50fotiamonthly',
+            100000: 'https://paystack.shop/pay/100fotiamonthly',
+        };
+        const PAYSTACK_FLEXIBLE_LINK = 'https://paystack.shop/pay/fotiamonthly';
+
+        const numericAmount = parseInt(amount.replace(/,/g, ''), 10);
+        return PAYSTACK_LINKS[numericAmount] || PAYSTACK_FLEXIBLE_LINK;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
 
         try {
-            const response = await fetch('/api/donations', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    ...formData,
-                    donationType
-                }),
-            });
+            // For MONTHLY partners - save to database then redirect to Paystack
+            if (donationType === 'monthly') {
+                // Save to database first
+                const response = await fetch('/api/donations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ...formData,
+                        donationType
+                    }),
+                });
 
-            const data = await response.json();
+                if (response.ok) {
+                    // Get the Paystack link and redirect
+                    const paystackLink = getPaystackLink(formData.amount || '0');
 
-            if (response.ok) {
-                setToast({
-                    show: true,
-                    message: 'Thank you! We\'ve received your information and will be in touch soon.',
-                    type: 'success'
+                    // Show quick success message
+                    setToast({
+                        show: true,
+                        message: 'Redirecting you to complete your monthly partnership setup...',
+                        type: 'success'
+                    });
+
+                    // Redirect after a short delay
+                    setTimeout(() => {
+                        window.location.href = paystackLink;
+                    }, 1500);
+                } else {
+                    const data = await response.json();
+                    setToast({
+                        show: true,
+                        message: data.message || 'Something went wrong. Please try again.',
+                        type: 'error'
+                    });
+                    setIsSubmitting(false);
+                }
+            }
+            // For ONE-TIME donors - save to database and send email
+            else {
+                const response = await fetch('/api/donations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ...formData,
+                        donationType
+                    }),
                 });
-                setFormData({
-                    fullName: '',
-                    email: '',
-                    phone: '',
-                    amount: '',
-                    prayerRequest: ''
-                });
-            } else {
-                setToast({
-                    show: true,
-                    message: data.error || 'Something went wrong. Please try again.',
-                    type: 'error'
-                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    setToast({
+                        show: true,
+                        message: 'Thank you! We\'ve received your information and sent you a confirmation email.',
+                        type: 'success'
+                    });
+                    setFormData({
+                        fullName: '',
+                        email: '',
+                        phone: '',
+                        amount: '',
+                        prayerRequest: ''
+                    });
+                } else {
+                    setToast({
+                        show: true,
+                        message: data.message || 'Something went wrong. Please try again.',
+                        type: 'error'
+                    });
+                }
+                setIsSubmitting(false);
             }
         } catch (error) {
             setToast({
@@ -72,7 +129,6 @@ const DonationSection = () => {
                 message: error.message || 'Network error. Please check your connection and try again.',
                 type: 'error'
             });
-        } finally {
             setIsSubmitting(false);
         }
     };
@@ -297,12 +353,10 @@ const DonationSection = () => {
 
                                     <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
                                         <p className="text-gray-700 mb-4">
-                                            To set up a monthly partnership
-                                            <span className="inline-block bg-yellow-500/20 text-orange-800 px-2 py-0.5 rounded font-semibold">
-                                            please fill out the form
+                                            Fill out the form with your details and chosen monthly amount.
+                                            <span className="inline-block bg-yellow-500/20 text-orange-800 px-2 py-0.5 rounded font-semibold ml-1">
+                                                You'll be redirected to Paystack to set up your recurring payment.
                                             </span>
-                                            with your preferred giving amount.
-                                            Our team will contact you to arrange the details.
                                         </p>
                                         <div className="flex items-center gap-2 text-sm text-gray-600">
                                             <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
@@ -321,7 +375,7 @@ const DonationSection = () => {
                             <p className="text-gray-600 mb-6">
                                 {donationType === 'one-time'
                                     ? "Share your details so we can send you a receipt and thank you personally."
-                                    : "Tell us about your partnership commitment and we'll reach out to set everything up."
+                                    : "Share your details and we'll redirect you to complete your monthly partnership setup."
                                 }
                             </p>
 
@@ -370,48 +424,27 @@ const DonationSection = () => {
                                     />
                                 </div>
 
-                                {donationType === 'monthly' && (
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Monthly commitment amount *
-                                        </label>
-                                        <div className="relative">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
-                                            <input
-                                                type="text"
-                                                id="amount"
-                                                name="amount"
-                                                value={formData.amount}
-                                                onChange={handleInputChange}
-                                                placeholder="e.g., 10,000"
-                                                className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
-                                                required
-                                            />
-                                        </div>
-                                        <p className="text-xs text-gray-500 mt-1">Enter the amount you'd like to give monthly</p>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        {donationType === 'monthly' ? 'Monthly commitment amount *' : 'Amount given (optional)'}
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
+                                        <input
+                                            type="text"
+                                            id="amount"
+                                            name="amount"
+                                            value={formData.amount}
+                                            onChange={handleInputChange}
+                                            placeholder={donationType === 'monthly' ? 'e.g., 10,000' : 'e.g., 50,000'}
+                                            className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
+                                            required={donationType === 'monthly'}
+                                        />
                                     </div>
-                                )}
-
-                                {donationType === 'one-time' && (
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Amount given (optional)
-                                        </label>
-                                        <div className="relative">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
-                                            <input
-                                                type="text"
-                                                id="amount"
-                                                name="amount"
-                                                value={formData.amount}
-                                                onChange={handleInputChange}
-                                                placeholder="e.g., 50,000"
-                                                className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
-                                            />
-                                        </div>
-                                        <p className="text-xs text-gray-500 mt-1">Helps us track and acknowledge your gift</p>
-                                    </div>
-                                )}
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {donationType === 'monthly' ? 'Enter the amount you\'d like to give monthly' : 'Helps us track and acknowledge your gift'}
+                                    </p>
+                                </div>
 
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -433,13 +466,16 @@ const DonationSection = () => {
                                     className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                                     disabled={isSubmitting}
                                 >
-                                    {isSubmitting ? 'Submitting...' : 'Submit Details'}
+                                    {isSubmitting
+                                        ? (donationType === 'monthly' ? 'Redirecting...' : 'Submitting...')
+                                        : (donationType === 'monthly' ? 'Continue to Payment Setup →' : 'Submit Details')
+                                    }
                                 </button>
 
                                 <p className="text-xs text-gray-500 text-center">
                                     {donationType === 'one-time'
                                         ? "We'll send you a receipt and thank you message within 24 hours."
-                                        : "Our team will contact you within 24 hours to finalize your partnership."
+                                        : "You'll be redirected to Paystack to complete your secure recurring payment setup."
                                     }
                                 </p>
                             </form>

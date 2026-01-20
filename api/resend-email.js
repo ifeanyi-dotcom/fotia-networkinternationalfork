@@ -146,7 +146,7 @@ const generateMonthlyEmail = (donorName, amount, paystackLink, isCustomAmount) =
                                 <strong>Fotia Network International</strong>
                             </p>
                             <p style="color: #9ca3af; font-size: 12px; margin: 5px 0;">
-                                Questions? Reply to this email or contact us at partners@fotianetwork.org
+                                Questions? Reply to this email or contact us at partner.fotianetwork.org
                             </p>
                             <p style="color: #9ca3af; font-size: 12px; margin: 5px 0;">
                                 © 2026 Fotia Network International. All rights reserved.
@@ -223,7 +223,7 @@ export default async function handler(req, res) {
 
         // Send email via Resend
         const emailResponse = await resend.emails.send({
-            from: 'Fotia Network <partners@fotianetwork.org>',
+            from: 'Fotia Network <partner.fotianetwork.org>',
             to: [donation.email],
             subject: subject,
             html: emailHtml,

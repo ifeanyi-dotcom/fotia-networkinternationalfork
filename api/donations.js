@@ -145,7 +145,7 @@ const generateMonthlyEmail = (donorName, amount, paystackLink, isCustomAmount) =
                                 <strong>Fotia Network International</strong>
                             </p>
                             <p style="color: #9ca3af; font-size: 12px; margin: 5px 0;">
-                                Questions? Reply to this email or contact us at partners@fotianetwork.org
+                                Questions? Reply to this email or contact us at partner.fotianetwork.org
                             </p>
                             <p style="color: #9ca3af; font-size: 12px; margin: 5px 0;">
                                 © 2026 Fotia Network International. All rights reserved.
@@ -209,54 +209,44 @@ export default async function handler(req, res) {
         const result = await donations.insertOne(donation);
         console.log('Donation saved:', result.insertedId);
 
-        // Send confirmation email
-        try {
-            let emailHtml;
-            let subject;
-
-            if (donationType === 'one-time') {
-                // Template A: One-Time Donor
-                emailHtml = generateOneTimeEmail(
+        // Send confirmation email ONLY for one-time donors
+        if (donationType === 'one-time') {
+            try {
+                const emailHtml = generateOneTimeEmail(
                     fullName.split(' ')[0], // First name only
                     parsedAmount
                 );
-                subject = 'Thank You for Your Gift to Fotia Network!';
-            } else {
-                // Template B: Monthly Partner
-                const paystackLink = getPaystackLink(parsedAmount);
-                const isCustom = !isPresetAmount(parsedAmount);
+                const subject = 'Thank You for Your Gift to Fotia Network!';
 
-                emailHtml = generateMonthlyEmail(
-                    fullName.split(' ')[0], // First name only
-                    parsedAmount,
-                    paystackLink,
-                    isCustom
+                // Send email via Resend
+                const emailResult = await resend.emails.send({
+                    from: 'Fotia Network <partner.fotianetwork.org>',
+                    to: [email],
+                    subject: subject,
+                    html: emailHtml,
+                });
+
+                console.log('Email sent successfully:', emailResult);
+
+                // Update donation record to mark email as sent
+                await donations.updateOne(
+                    { _id: result.insertedId },
+                    { $set: { emailSent: true, emailId: emailResult.id, emailSentAt: new Date() } }
                 );
-                subject = 'Welcome to the Fotia Partner Family!';
+
+            } catch (emailError) {
+                console.error('Failed to send email:', emailError);
+                // Update donation to mark email as failed
+                await donations.updateOne(
+                    { _id: result.insertedId },
+                    { $set: { emailSent: false, emailError: emailError.message } }
+                );
             }
-
-            // Send email via Resend
-            const emailResult = await resend.emails.send({
-                from: 'Fotia Network <partners@fotianetwork.org>',
-                to: [email],
-                subject: subject,
-                html: emailHtml,
-            });
-
-            console.log('Email sent successfully:', emailResult);
-
-            // Update donation record to mark email as sent
+        } else {
+            // For monthly partners, just mark as email not applicable
             await donations.updateOne(
                 { _id: result.insertedId },
-                { $set: { emailSent: true, emailId: emailResult.id, emailSentAt: new Date() } }
-            );
-
-        } catch (emailError) {
-            console.error('Failed to send email:', emailError);
-            // Update donation to mark email as failed
-            await donations.updateOne(
-                { _id: result.insertedId },
-                { $set: { emailSent: false, emailError: emailError.message } }
+                { $set: { emailSent: null } } // null = not applicable for monthly
             );
         }
 
