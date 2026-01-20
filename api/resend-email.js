@@ -1,10 +1,166 @@
 import resend from './utils/resend.js';
 import clientPromise from './utils/db.js';
 import { ObjectId } from 'mongodb';
-import { render } from '@react-email/render';
-import OneTimeDonorEmail from './emails/OneTimeDonorEmail.jsx';
-import MonthlyPartnerEmail from './emails/MonthlyPartnerEmail.jsx';
 import { getPaystackLink, isPresetAmount } from './utils/paystack-links.js';
+
+// Simple HTML email templates (same as donations.js)
+const generateOneTimeEmail = (donorName, amount) => {
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Ubuntu, sans-serif; background-color: #f6f9fc;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f6f9fc; padding: 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #dc2626; padding: 30px 40px; text-align: center;">
+                            <h1 style="color: #ffffff; font-size: 24px; font-weight: bold; margin: 0;">🔥 Fotia Network International</h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <h2 style="color: #1f2937; font-size: 28px; font-weight: bold; margin: 0 0 20px 0;">Thank You, ${donorName}!</h2>
+                            
+                            <p style="color: #4b5563; font-size: 16px; line-height: 26px; margin: 0 0 20px 0;">
+                                We are deeply grateful for your generous one-time gift of <strong>₦${amount?.toLocaleString()}</strong> to Fotia Network International.
+                            </p>
+                            
+                            <p style="color: #4b5563; font-size: 16px; line-height: 26px; margin: 0 0 20px 0;">
+                                Your gift is making a real difference! Through your generosity, we are able to:
+                            </p>
+                            
+                            <ul style="padding-left: 20px; margin: 0 0 20px 0;">
+                                <li style="color: #4b5563; font-size: 16px; line-height: 28px;">Spread the Gospel to unreached communities</li>
+                                <li style="color: #4b5563; font-size: 16px; line-height: 28px;">Support outreach programs and events</li>
+                                <li style="color: #4b5563; font-size: 16px; line-height: 28px;">Provide resources for spiritual growth</li>
+                            </ul>
+                            
+                            <p style="color: #4b5563; font-size: 16px; line-height: 26px; margin: 0 0 20px 0;">
+                                May God bless you abundantly for your faithfulness and generosity!
+                            </p>
+                            
+                            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+                            
+                            <!-- CTA Section -->
+                            <div style="background-color: #fef3c7; padding: 25px; border-radius: 8px; text-align: center;">
+                                <h3 style="color: #1f2937; font-size: 20px; font-weight: bold; margin: 0 0 15px 0;">Become a Monthly Partner</h3>
+                                <p style="color: #4b5563; font-size: 16px; line-height: 26px; margin: 0 0 20px 0;">
+                                    Want to make an even greater impact? Join our family of monthly partners who are consistently fueling the fire of ministry.
+                                </p>
+                                <a href="https://paystack.shop/pay/fotiamonthly" style="display: inline-block; background-color: #dc2626; border-radius: 6px; color: #ffffff; font-size: 16px; font-weight: bold; text-decoration: none; text-align: center; padding: 14px 30px; margin-top: 10px;">
+                                    Become a Monthly Partner →
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px 40px; text-align: center;">
+                            <p style="color: #6b7280; font-size: 14px; line-height: 24px; margin: 0 0 10px 0;">
+                                With gratitude,<br />
+                                <strong>Fotia Network International</strong>
+                            </p>
+                            <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                                © 2026 Fotia Network International. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+    `;
+};
+
+const generateMonthlyEmail = (donorName, amount, paystackLink, isCustomAmount) => {
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Ubuntu, sans-serif; background-color: #f6f9fc;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f6f9fc; padding: 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #dc2626; padding: 30px 40px; text-align: center;">
+                            <h1 style="color: #ffffff; font-size: 24px; font-weight: bold; margin: 0;">Fotia Network International</h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <h2 style="color: #1f2937; font-size: 28px; font-weight: bold; margin: 0 0 20px 0;">Welcome to the Partner Family, ${donorName}!</h2>
+                            
+                            <p style="color: #4b5563; font-size: 16px; line-height: 26px; margin: 0 0 20px 0;">
+                                We are thrilled that you've decided to become a monthly partner with Fotia Network International with a commitment of <strong>₦${amount?.toLocaleString()}/month</strong>!
+                            </p>
+                            
+                            <p style="color: #4b5563; font-size: 16px; line-height: 26px; margin: 0 0 20px 0;">
+                                Your consistent partnership is the fuel that keeps the fire burning. Together, we are making an eternal impact!
+                            </p>
+                            
+                            <!-- Action Box -->
+                            <div style="background-color: #fef3c7; padding: 30px; border-radius: 8px; text-align: center; margin: 25px 0;">
+                                <h3 style="color: #1f2937; font-size: 20px; font-weight: bold; margin: 0 0 15px 0;">Complete Your Partnership Setup</h3>
+                                <p style="color: #92400e; font-size: 15px; margin: 0 0 20px 0;">
+                                    ${isCustomAmount
+        ? `Click the button below and enter ₦${amount?.toLocaleString()} as your recurring monthly amount:`
+        : 'Click the button below to set up your recurring monthly partnership:'
+    }
+                                </p>
+                                <a href="${paystackLink}" style="display: inline-block; background-color: #dc2626; border-radius: 6px; color: #ffffff; font-size: 18px; font-weight: bold; text-decoration: none; text-align: center; padding: 16px 35px;">
+                                    Set Up My Monthly Partnership →
+                                </a>
+                            </div>
+                            
+                            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+                            
+                            <p style="color: #4b5563; font-size: 16px; line-height: 26px; margin: 0 0 20px 0;">
+                                Thank you for standing with us. Your faithfulness is helping to spread the fire of the Gospel across nations!
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px 40px; text-align: center;">
+                            <p style="color: #6b7280; font-size: 14px; line-height: 24px; margin: 0 0 10px 0;">
+                                With gratitude and blessings,<br />
+                                <strong>Fotia Network International</strong>
+                            </p>
+                            <p style="color: #9ca3af; font-size: 12px; margin: 5px 0;">
+                                Questions? Reply to this email or contact us at partners@fotianetwork.org
+                            </p>
+                            <p style="color: #9ca3af; font-size: 12px; margin: 5px 0;">
+                                © 2026 Fotia Network International. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+    `;
+};
 
 export default async function handler(req, res) {
     // Set CORS headers
@@ -47,24 +203,20 @@ export default async function handler(req, res) {
         let subject;
 
         if (donation.donationType === 'one-time') {
-            emailHtml = await render(
-                OneTimeDonorEmail({
-                    donorName: donation.fullName.split(' ')[0],
-                    amount: parsedAmount,
-                })
+            emailHtml = generateOneTimeEmail(
+                donation.fullName.split(' ')[0],
+                parsedAmount
             );
             subject = 'Thank You for Your Gift to Fotia Network!';
         } else {
             const paystackLink = getPaystackLink(parsedAmount);
             const isCustom = !isPresetAmount(parsedAmount);
 
-            emailHtml = await render(
-                MonthlyPartnerEmail({
-                    donorName: donation.fullName.split(' ')[0],
-                    amount: parsedAmount,
-                    paystackLink: paystackLink,
-                    isCustomAmount: isCustom,
-                })
+            emailHtml = generateMonthlyEmail(
+                donation.fullName.split(' ')[0],
+                parsedAmount,
+                paystackLink,
+                isCustom
             );
             subject = 'Welcome to the Fotia Partner Family!';
         }
