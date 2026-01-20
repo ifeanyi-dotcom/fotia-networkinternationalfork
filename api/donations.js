@@ -29,7 +29,7 @@ export default async function handler(req, res) {
 
         // Connect to MongoDB
         const client = await clientPromise;
-        const db = client.db('fotia-network');
+        const db = client.db('Fotia_db');
         const donations = db.collection('donations');
 
         // Create donation record

@@ -21,11 +21,12 @@ export default defineConfig({
             '/api': {
                 target: 'http://localhost:3001',
                 changeOrigin: true,
-            }
-        }
+                secure: false,
+            },
+        },
     },
     preview: {
         port: 3000,
         strictPort: false,
-    }
-})
+    },
+});

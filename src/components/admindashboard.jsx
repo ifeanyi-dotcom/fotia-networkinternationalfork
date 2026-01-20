@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import Header from './Header';
-import Footer from './Footer';
-import {Users, DollarSign, TrendingUp, Calendar, Mail, RefreshCw, Check, X, Clock, Download, Table, LayoutGrid, Filter, ChevronDown} from 'lucide-react';
+import {Users, DollarSign, TrendingUp, Calendar, Mail, RefreshCw, Check, X, Clock, Download, Table, LayoutGrid, Filter, Search, ChevronDown} from 'lucide-react';
 
 const AdminDashboard = () => {
     const [donations, setDonations] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [viewMode, setViewMode] = useState('card'); // 'card' or 'table'
-    const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'one-time', 'monthly'
-    const [emailFilter, setEmailFilter] = useState('all'); // 'all', 'sent', 'failed'
+    const [viewMode, setViewMode] = useState('card');
+    const [typeFilter, setTypeFilter] = useState('all');
+    const [emailFilter, setEmailFilter] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
     const [resendingId, setResendingId] = useState(null);
+    const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
         fetchDonations();
@@ -17,11 +17,27 @@ const AdminDashboard = () => {
 
     const fetchDonations = async () => {
         try {
-            const response = await fetch('/api/donations');
+            // Create Basic Auth credentials
+            const username = 'admin';
+            const password = 'fotia2024';
+            const credentials = btoa(`${username}:${password}`);
+
+            const response = await fetch('/api/get-donations', {
+                headers: {
+                    'Authorization': `Basic ${credentials}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
-            setDonations(data);
+            // API returns { donations: [], totalDonations: number }
+            setDonations(data.donations || []);
         } catch (error) {
             console.error('Error fetching donations:', error);
+            setDonations([]); // Set empty array on error
         } finally {
             setLoading(false);
         }
@@ -29,12 +45,21 @@ const AdminDashboard = () => {
 
     // Stats calculations
     const totalDonations = donations.length;
-    const totalAmount = donations.reduce((sum, d) => sum + (d.amount || 0), 0);
+    const totalAmount = donations.reduce((sum, d) => {
+        const amount = d.monthlyAmount || d.oneTimeAmount || 0;
+        return sum + Number(amount);
+    }, 0);
     const monthlyDonors = donations.filter(d => d.donationType === 'monthly').length;
     const emailsSent = donations.filter(d => d.emailSent === true).length;
     const emailSuccessRate = totalDonations > 0
         ? Math.round((emailsSent / totalDonations) * 100)
         : 0;
+    const thisMonthDonations = donations.filter(d => {
+        const donationDate = new Date(d.createdAt);
+        const now = new Date();
+        return donationDate.getMonth() === now.getMonth() &&
+            donationDate.getFullYear() === now.getFullYear();
+    }).length;
 
     // Filtering logic
     const filteredDonations = donations.filter(donation => {
@@ -45,6 +70,14 @@ const AdminDashboard = () => {
         // Email filter
         if (emailFilter === 'sent' && donation.emailSent !== true) return false;
         if (emailFilter === 'failed' && donation.emailSent === true) return false;
+
+        // Search filter
+        if (searchTerm) {
+            const search = searchTerm.toLowerCase();
+            const matchesName = donation.fullName?.toLowerCase().includes(search);
+            const matchesEmail = donation.email?.toLowerCase().includes(search);
+            if (!matchesName && !matchesEmail) return false;
+        }
 
         return true;
     });
@@ -62,7 +95,6 @@ const AdminDashboard = () => {
             const result = await response.json();
 
             if (result.success) {
-                // Update local state
                 setDonations(prev => prev.map(d =>
                     d._id === donationId
                         ? { ...d, emailSent: true, emailSentAt: new Date().toISOString() }
@@ -82,11 +114,12 @@ const AdminDashboard = () => {
 
     // CSV Export
     const exportToCSV = () => {
-        const headers = ['Name', 'Email', 'Amount', 'Type', 'Date', 'Email Status', 'Email Sent Date'];
+        const headers = ['Name', 'Email', 'Phone', 'Amount', 'Type', 'Date', 'Email Status', 'Email Sent Date'];
         const rows = filteredDonations.map(d => [
-            d.name || '',
+            d.fullName || '',
             d.email || '',
-            d.amount || 0,
+            d.phone || '',
+            d.monthlyAmount || d.oneTimeAmount || 0,
             d.donationType || 'one-time',
             new Date(d.createdAt).toLocaleDateString(),
             d.emailSent ? 'Sent' : 'Pending/Failed',
@@ -109,27 +142,28 @@ const AdminDashboard = () => {
     // Email status badge component
     const EmailStatusBadge = ({ emailSent, emailSentAt }) => {
         if (emailSent === true) {
-            const date = emailSentAt ? new Date(emailSentAt).toLocaleDateString() : 'N/A';
+            const date = emailSentAt ? new Date(emailSentAt).toLocaleDateString() : '';
             return (
                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          <Check size={12} />
-          Sent {date}
-        </span>
+                    <Check size={12} />
+                    <span className="hidden sm:inline">Sent</span>
+                    {date && <span className="hidden md:inline text-green-600">• {date}</span>}
+                </span>
             );
         }
         if (emailSent === false) {
             return (
                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-          <X size={12} />
-          Failed
-        </span>
+                    <X size={12} />
+                    <span className="hidden sm:inline">Failed</span>
+                </span>
             );
         }
         return (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-        <Clock size={12} />
-        Pending
-      </span>
+                <Clock size={12} />
+                <span className="hidden sm:inline">Pending</span>
+            </span>
         );
     };
 
@@ -140,117 +174,138 @@ const AdminDashboard = () => {
                 ? 'bg-blue-100 text-blue-800'
                 : 'bg-purple-100 text-purple-800'
         }`}>
-      {type === 'monthly' ? 'Monthly Partner' : 'One-Time'}
-    </span>
+            {type === 'monthly' ? 'Monthly' : 'One-Time'}
+        </span>
     );
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <RefreshCw className="animate-spin" size={32} />
+            <div className="flex items-center justify-center min-h-screen bg-gray-50">
+                <div className="text-center">
+                    <RefreshCw className="animate-spin mx-auto mb-4 text-blue-600" size={40} />
+                    <p className="text-gray-600">Loading donations...</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <Header />
-            <div className="max-w-7xl mx-auto">
+        <div className="min-h-screen bg-gray-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-                    <p className="text-gray-600 mt-1">Manage donations and email communications</p>
+                <div className="mb-6 sm:mb-8">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+                    <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage donations and email communications</p>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
                     {/* Total Donations */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">Total Donations</p>
-                                <p className="text-2xl font-bold text-gray-900">{totalDonations}</p>
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div className="flex-1">
+                                <p className="text-xs sm:text-sm text-gray-500">Total</p>
+                                <p className="text-xl sm:text-2xl font-bold text-gray-900">{totalDonations}</p>
                             </div>
-                            <div className="p-3 bg-blue-100 rounded-lg">
-                                <Users className="text-blue-600" size={24} />
+                            <div className="p-2 sm:p-3 bg-blue-100 rounded-lg self-start sm:self-auto">
+                                <Users className="text-blue-600" size={20} />
                             </div>
                         </div>
                     </div>
 
                     {/* Total Amount */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">Total Amount</p>
-                                <p className="text-2xl font-bold text-gray-900">${totalAmount.toLocaleString()}</p>
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div className="flex-1">
+                                <p className="text-xs sm:text-sm text-gray-500">Amount</p>
+                                <p className="text-xl sm:text-2xl font-bold text-gray-900">₦{totalAmount.toLocaleString()}</p>
                             </div>
-                            <div className="p-3 bg-green-100 rounded-lg">
-                                <DollarSign className="text-green-600" size={24} />
+                            <div className="p-2 sm:p-3 bg-green-100 rounded-lg self-start sm:self-auto">
+                                <DollarSign className="text-green-600" size={20} />
                             </div>
                         </div>
                     </div>
 
                     {/* Monthly Donors */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">Monthly Partners</p>
-                                <p className="text-2xl font-bold text-gray-900">{monthlyDonors}</p>
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div className="flex-1">
+                                <p className="text-xs sm:text-sm text-gray-500">Monthly</p>
+                                <p className="text-xl sm:text-2xl font-bold text-gray-900">{monthlyDonors}</p>
                             </div>
-                            <div className="p-3 bg-orange-100 rounded-lg">
-                                <Calendar className="text-orange-600" size={24} />
+                            <div className="p-2 sm:p-3 bg-orange-100 rounded-lg self-start sm:self-auto">
+                                <Calendar className="text-orange-600" size={20} />
                             </div>
                         </div>
                     </div>
 
                     {/* This Month */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">This Month</p>
-                                <p className="text-2xl font-bold text-gray-900">
-                                    {donations.filter(d => {
-                                        const donationDate = new Date(d.createdAt);
-                                        const now = new Date();
-                                        return donationDate.getMonth() === now.getMonth() &&
-                                            donationDate.getFullYear() === now.getFullYear();
-                                    }).length}
-                                </p>
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div className="flex-1">
+                                <p className="text-xs sm:text-sm text-gray-500">This Month</p>
+                                <p className="text-xl sm:text-2xl font-bold text-gray-900">{thisMonthDonations}</p>
                             </div>
-                            <div className="p-3 bg-indigo-100 rounded-lg">
-                                <TrendingUp className="text-indigo-600" size={24} />
+                            <div className="p-2 sm:p-3 bg-indigo-100 rounded-lg self-start sm:self-auto">
+                                <TrendingUp className="text-indigo-600" size={20} />
                             </div>
                         </div>
                     </div>
 
-                    {/* Emails Sent - NEW */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">Emails Sent</p>
-                                <p className="text-2xl font-bold text-gray-900">{emailsSent}</p>
-                                <p className="text-xs text-gray-400 mt-1">{emailSuccessRate}% success rate</p>
+                    {/* Emails Sent */}
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100 col-span-2 lg:col-span-1">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div className="flex-1">
+                                <p className="text-xs sm:text-sm text-gray-500">Emails</p>
+                                <p className="text-xl sm:text-2xl font-bold text-gray-900">{emailsSent}</p>
+                                <p className="text-xs text-gray-400 mt-1">{emailSuccessRate}% success</p>
                             </div>
-                            <div className="p-3 bg-purple-100 rounded-lg">
-                                <Mail className="text-purple-600" size={24} />
+                            <div className="p-2 sm:p-3 bg-purple-100 rounded-lg self-start sm:self-auto">
+                                <Mail className="text-purple-600" size={20} />
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Filters & Controls */}
-                <div className="bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100">
-                    <div className="flex flex-wrap items-center justify-between gap-4">
+                {/* Search & Filters Section */}
+                <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 mb-4 sm:mb-6 border border-gray-100">
+                    {/* Search Bar */}
+                    <div className="mb-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                            <input
+                                type="text"
+                                placeholder="Search by name or email..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Mobile Filter Toggle */}
+                    <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="lg:hidden w-full flex items-center justify-between px-4 py-2 bg-gray-50 rounded-lg mb-4"
+                    >
+                        <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                            <Filter size={16} />
+                            Filters
+                        </span>
+                        <ChevronDown size={16} className={`transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {/* Filters */}
+                    <div className={`${showFilters ? 'block' : 'hidden'} lg:flex flex-col lg:flex-row lg:items-center gap-4`}>
                         {/* Type Filter */}
-                        <div className="flex items-center gap-2">
-                            <Filter size={16} className="text-gray-400" />
-                            <span className="text-sm text-gray-500">Type:</span>
-                            <div className="flex gap-1">
+                        <div className="flex-1">
+                            <label className="text-xs sm:text-sm text-gray-500 mb-2 block">Donation Type</label>
+                            <div className="flex flex-wrap gap-2">
                                 {['all', 'one-time', 'monthly'].map(filter => (
                                     <button
                                         key={filter}
                                         onClick={() => setTypeFilter(filter)}
-                                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                                        className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                                             typeFilter === filter
                                                 ? 'bg-blue-600 text-white'
                                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -263,15 +318,14 @@ const AdminDashboard = () => {
                         </div>
 
                         {/* Email Filter */}
-                        <div className="flex items-center gap-2">
-                            <Mail size={16} className="text-gray-400" />
-                            <span className="text-sm text-gray-500">Email:</span>
-                            <div className="flex gap-1">
+                        <div className="flex-1">
+                            <label className="text-xs sm:text-sm text-gray-500 mb-2 block">Email Status</label>
+                            <div className="flex flex-wrap gap-2">
                                 {['all', 'sent', 'failed'].map(filter => (
                                     <button
                                         key={filter}
                                         onClick={() => setEmailFilter(filter)}
-                                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                                        className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                                             emailFilter === filter
                                                 ? 'bg-purple-600 text-white'
                                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -284,68 +338,76 @@ const AdminDashboard = () => {
                         </div>
 
                         {/* View Mode & Export */}
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setViewMode('card')}
-                                className={`p-2 rounded-lg transition-colors ${
-                                    viewMode === 'card' ? 'bg-gray-200' : 'hover:bg-gray-100'
-                                }`}
-                            >
-                                <LayoutGrid size={18} />
-                            </button>
-                            <button
-                                onClick={() => setViewMode('table')}
-                                className={`p-2 rounded-lg transition-colors ${
-                                    viewMode === 'table' ? 'bg-gray-200' : 'hover:bg-gray-100'
-                                }`}
-                            >
-                                <Table size={18} />
-                            </button>
+                        <div className="flex items-center gap-2 lg:ml-auto">
+                            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+                                <button
+                                    onClick={() => setViewMode('card')}
+                                    className={`p-2 rounded-md transition-colors ${
+                                        viewMode === 'card' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
+                                    }`}
+                                    title="Card view"
+                                >
+                                    <LayoutGrid size={18} />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('table')}
+                                    className={`p-2 rounded-md transition-colors ${
+                                        viewMode === 'table' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
+                                    }`}
+                                    title="Table view"
+                                >
+                                    <Table size={18} />
+                                </button>
+                            </div>
                             <button
                                 onClick={exportToCSV}
-                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
                             >
                                 <Download size={16} />
-                                Export CSV
+                                <span className="hidden sm:inline">Export</span>
                             </button>
                         </div>
                     </div>
                 </div>
 
                 {/* Results Count */}
-                <p className="text-sm text-gray-500 mb-4">
-                    Showing {filteredDonations.length} of {totalDonations} donations
-                </p>
+                <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm text-gray-500">
+                        Showing <span className="font-semibold text-gray-900">{filteredDonations.length}</span> of <span className="font-semibold text-gray-900">{totalDonations}</span> donations
+                    </p>
+                </div>
 
                 {/* Card View */}
                 {viewMode === 'card' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filteredDonations.map(donation => (
-                            <div key={donation._id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div>
-                                        <h3 className="font-semibold text-gray-900">{donation.name}</h3>
-                                        <p className="text-sm text-gray-500">{donation.email}</p>
+                            <div key={donation._id} className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                                <div className="flex items-start justify-between mb-3 sm:mb-4">
+                                    <div className="flex-1 min-w-0 mr-2">
+                                        <h3 className="font-semibold text-gray-900 truncate text-sm sm:text-base">{donation.fullName}</h3>
+                                        <p className="text-xs sm:text-sm text-gray-500 truncate">{donation.email}</p>
                                     </div>
-                                    <p className="text-xl font-bold text-green-600">${donation.amount}</p>
+                                    <p className="text-lg sm:text-xl font-bold text-green-600 flex-shrink-0">
+                                        ₦{(donation.monthlyAmount || donation.oneTimeAmount || 0).toLocaleString()}
+                                    </p>
                                 </div>
 
-                                <div className="flex flex-wrap items-center gap-2 mb-4">
+                                <div className="flex flex-wrap items-center gap-2 mb-3 sm:mb-4">
                                     <TypeBadge type={donation.donationType} />
                                     <EmailStatusBadge emailSent={donation.emailSent} emailSentAt={donation.emailSentAt} />
                                 </div>
 
-                                <div className="flex items-center justify-between text-sm text-gray-500">
-                                    <span>{new Date(donation.createdAt).toLocaleDateString()}</span>
+                                <div className="flex items-center justify-between text-xs sm:text-sm">
+                                    <span className="text-gray-500">{new Date(donation.createdAt).toLocaleDateString()}</span>
 
                                     {donation.emailSent !== true && (
                                         <button
                                             onClick={() => handleResendEmail(donation._id)}
                                             disabled={resendingId === donation._id}
-                                            className="flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
+                                            className="flex items-center gap-1 px-2 sm:px-3 py-1 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50 text-xs sm:text-sm font-medium"
                                         >
                                             <RefreshCw size={14} className={resendingId === donation._id ? 'animate-spin' : ''} />
-                                            Resend
+                                            <span>Resend</span>
                                         </button>
                                     )}
                                 </div>
@@ -356,32 +418,37 @@ const AdminDashboard = () => {
 
                 {/* Table View */}
                 {viewMode === 'table' && (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-gray-50 border-b border-gray-100">
                                 <tr>
-                                    <th className="text-left p-4 font-medium text-gray-600">Name</th>
-                                    <th className="text-left p-4 font-medium text-gray-600">Email</th>
-                                    <th className="text-left p-4 font-medium text-gray-600">Amount</th>
-                                    <th className="text-left p-4 font-medium text-gray-600">Type</th>
-                                    <th className="text-left p-4 font-medium text-gray-600">Date</th>
-                                    <th className="text-left p-4 font-medium text-gray-600">Email Status</th>
-                                    <th className="text-left p-4 font-medium text-gray-600">Actions</th>
+                                    <th className="text-left p-3 sm:p-4 font-medium text-gray-600 text-xs sm:text-sm">Name</th>
+                                    <th className="text-left p-3 sm:p-4 font-medium text-gray-600 text-xs sm:text-sm hidden md:table-cell">Email</th>
+                                    <th className="text-left p-3 sm:p-4 font-medium text-gray-600 text-xs sm:text-sm">Amount</th>
+                                    <th className="text-left p-3 sm:p-4 font-medium text-gray-600 text-xs sm:text-sm">Type</th>
+                                    <th className="text-left p-3 sm:p-4 font-medium text-gray-600 text-xs sm:text-sm hidden lg:table-cell">Date</th>
+                                    <th className="text-left p-3 sm:p-4 font-medium text-gray-600 text-xs sm:text-sm">Status</th>
+                                    <th className="text-left p-3 sm:p-4 font-medium text-gray-600 text-xs sm:text-sm">Actions</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 {filteredDonations.map(donation => (
                                     <tr key={donation._id} className="border-b border-gray-50 hover:bg-gray-50">
-                                        <td className="p-4 font-medium text-gray-900">{donation.name}</td>
-                                        <td className="p-4 text-gray-600">{donation.email}</td>
-                                        <td className="p-4 font-semibold text-green-600">${donation.amount}</td>
-                                        <td className="p-4"><TypeBadge type={donation.donationType} /></td>
-                                        <td className="p-4 text-gray-500">{new Date(donation.createdAt).toLocaleDateString()}</td>
-                                        <td className="p-4">
+                                        <td className="p-3 sm:p-4">
+                                            <div className="font-medium text-gray-900 text-sm">{donation.fullName}</div>
+                                            <div className="text-xs text-gray-500 md:hidden">{donation.email}</div>
+                                        </td>
+                                        <td className="p-3 sm:p-4 text-gray-600 text-sm hidden md:table-cell">{donation.email}</td>
+                                        <td className="p-3 sm:p-4 font-semibold text-green-600 text-sm">
+                                            ₦{(donation.monthlyAmount || donation.oneTimeAmount || 0).toLocaleString()}
+                                        </td>
+                                        <td className="p-3 sm:p-4"><TypeBadge type={donation.donationType} /></td>
+                                        <td className="p-3 sm:p-4 text-gray-500 text-sm hidden lg:table-cell">{new Date(donation.createdAt).toLocaleDateString()}</td>
+                                        <td className="p-3 sm:p-4">
                                             <EmailStatusBadge emailSent={donation.emailSent} emailSentAt={donation.emailSentAt} />
                                         </td>
-                                        <td className="p-4">
+                                        <td className="p-3 sm:p-4">
                                             {donation.emailSent !== true && (
                                                 <button
                                                     onClick={() => handleResendEmail(donation._id)}
@@ -402,12 +469,22 @@ const AdminDashboard = () => {
                 )}
 
                 {filteredDonations.length === 0 && (
-                    <div className="text-center py-12 text-gray-500">
-                        No donations match your filters
+                    <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
+                        <Filter size={48} className="mx-auto text-gray-300 mb-4" />
+                        <p className="text-gray-500 text-sm sm:text-base">No donations match your filters</p>
+                        <button
+                            onClick={() => {
+                                setTypeFilter('all');
+                                setEmailFilter('all');
+                                setSearchTerm('');
+                            }}
+                            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                        >
+                            Clear Filters
+                        </button>
                     </div>
                 )}
             </div>
-            <Footer />
         </div>
     );
 };

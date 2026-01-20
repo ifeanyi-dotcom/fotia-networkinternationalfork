@@ -24,3 +24,20 @@ export async function connectToDatabase() {
 
     return { client, db };
 }
+
+// Also export as default clientPromise for consistency
+const clientPromise = (async () => {
+    if (!uri) {
+        throw new Error('MONGODB_URI environment variable is not set.');
+    }
+
+    if (cachedClient) {
+        return cachedClient;
+    }
+
+    const client = await MongoClient.connect(uri);
+    cachedClient = client;
+    return client;
+})();
+
+export default clientPromise;
