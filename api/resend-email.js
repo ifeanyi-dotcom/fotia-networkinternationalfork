@@ -39,6 +39,9 @@ export default async function handler(req, res) {
             return res.status(404).json({ error: 'Donation not found' });
         }
 
+        // Parse the amount from database (remove commas)
+        const parsedAmount = donation.amount ? parseInt(donation.amount.toString().replace(/,/g, '')) : 0;
+
         // Generate email based on donation type
         let emailHtml;
         let subject;
@@ -47,18 +50,18 @@ export default async function handler(req, res) {
             emailHtml = await render(
                 OneTimeDonorEmail({
                     donorName: donation.fullName.split(' ')[0],
-                    amount: donation.oneTimeAmount,
+                    amount: parsedAmount,
                 })
             );
             subject = 'Thank You for Your Gift to Fotia Network!';
         } else {
-            const paystackLink = getPaystackLink(donation.monthlyAmount);
-            const isCustom = !isPresetAmount(donation.monthlyAmount);
+            const paystackLink = getPaystackLink(parsedAmount);
+            const isCustom = !isPresetAmount(parsedAmount);
 
             emailHtml = await render(
                 MonthlyPartnerEmail({
                     donorName: donation.fullName.split(' ')[0],
-                    amount: donation.monthlyAmount,
+                    amount: parsedAmount,
                     paystackLink: paystackLink,
                     isCustomAmount: isCustom,
                 })

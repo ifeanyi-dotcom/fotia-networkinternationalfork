@@ -32,19 +32,20 @@ export default async function handler(req, res) {
         const db = client.db('Fotia_db');
         const donations = db.collection('donations');
 
-        // Parse amount
-        const parsedAmount = amount ? parseInt(amount.replace(/,/g, '')) : null;
+        // Parse amount - remove commas if present
+        const parsedAmount = amount ? parseInt(amount.toString().replace(/,/g, '')) : 0;
 
-        // Create donation record
+        // Create donation record matching your database schema
         const donation = {
             fullName,
             email,
             phone,
+            amount: amount || '', // Keep original format with commas
             donationType,
-            monthlyAmount: donationType === 'monthly' ? parsedAmount : null,
-            oneTimeAmount: donationType === 'one-time' ? parsedAmount : null,
             createdAt: new Date(),
+            status: 'pending',
             emailSent: false,
+            ipAddress: req.headers['x-forwarded-for'] || req.connection.remoteAddress || ''
         };
 
         // Save to MongoDB

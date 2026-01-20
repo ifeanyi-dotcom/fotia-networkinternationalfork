@@ -17,7 +17,6 @@ const AdminDashboard = () => {
 
     const fetchDonations = async () => {
         try {
-            // Create Basic Auth credentials
             const username = 'admin';
             const password = 'fotia2024';
             const credentials = btoa(`${username}:${password}`);
@@ -33,22 +32,24 @@ const AdminDashboard = () => {
             }
 
             const data = await response.json();
-            // API returns { donations: [], totalDonations: number }
             setDonations(data.donations || []);
         } catch (error) {
             console.error('Error fetching donations:', error);
-            setDonations([]); // Set empty array on error
+            setDonations([]);
         } finally {
             setLoading(false);
         }
     };
 
+    // Helper function to parse amount
+    const parseAmount = (amount) => {
+        if (!amount) return 0;
+        return parseInt(amount.toString().replace(/,/g, '')) || 0;
+    };
+
     // Stats calculations
     const totalDonations = donations.length;
-    const totalAmount = donations.reduce((sum, d) => {
-        const amount = d.monthlyAmount || d.oneTimeAmount || 0;
-        return sum + Number(amount);
-    }, 0);
+    const totalAmount = donations.reduce((sum, d) => sum + parseAmount(d.amount), 0);
     const monthlyDonors = donations.filter(d => d.donationType === 'monthly').length;
     const emailsSent = donations.filter(d => d.emailSent === true).length;
     const emailSuccessRate = totalDonations > 0
@@ -63,15 +64,12 @@ const AdminDashboard = () => {
 
     // Filtering logic
     const filteredDonations = donations.filter(donation => {
-        // Type filter
         if (typeFilter === 'one-time' && donation.donationType !== 'one-time') return false;
         if (typeFilter === 'monthly' && donation.donationType !== 'monthly') return false;
 
-        // Email filter
         if (emailFilter === 'sent' && donation.emailSent !== true) return false;
         if (emailFilter === 'failed' && donation.emailSent === true) return false;
 
-        // Search filter
         if (searchTerm) {
             const search = searchTerm.toLowerCase();
             const matchesName = donation.fullName?.toLowerCase().includes(search);
@@ -119,7 +117,7 @@ const AdminDashboard = () => {
             d.fullName || '',
             d.email || '',
             d.phone || '',
-            d.monthlyAmount || d.oneTimeAmount || 0,
+            d.amount || 0,
             d.donationType || 'one-time',
             new Date(d.createdAt).toLocaleDateString(),
             d.emailSent ? 'Sent' : 'Pending/Failed',
@@ -388,7 +386,7 @@ const AdminDashboard = () => {
                                         <p className="text-xs sm:text-sm text-gray-500 truncate">{donation.email}</p>
                                     </div>
                                     <p className="text-lg sm:text-xl font-bold text-green-600 flex-shrink-0">
-                                        ₦{(donation.monthlyAmount || donation.oneTimeAmount || 0).toLocaleString()}
+                                        ₦{parseAmount(donation.amount).toLocaleString()}
                                     </p>
                                 </div>
 
@@ -441,7 +439,7 @@ const AdminDashboard = () => {
                                         </td>
                                         <td className="p-3 sm:p-4 text-gray-600 text-sm hidden md:table-cell">{donation.email}</td>
                                         <td className="p-3 sm:p-4 font-semibold text-green-600 text-sm">
-                                            ₦{(donation.monthlyAmount || donation.oneTimeAmount || 0).toLocaleString()}
+                                            ₦{parseAmount(donation.amount).toLocaleString()}
                                         </td>
                                         <td className="p-3 sm:p-4"><TypeBadge type={donation.donationType} /></td>
                                         <td className="p-3 sm:p-4 text-gray-500 text-sm hidden lg:table-cell">{new Date(donation.createdAt).toLocaleDateString()}</td>
