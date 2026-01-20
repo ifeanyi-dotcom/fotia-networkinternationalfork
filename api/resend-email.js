@@ -1,10 +1,21 @@
-import { Resend } from 'resend';
-import clientPromise from './utils/db';
+import resend from './utils/resend.js';
+import clientPromise from './utils/db.js';
 import { ObjectId } from 'mongodb';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { render } from '@react-email/render';
+import OneTimeDonorEmail from './emails/OneTimeDonorEmail.jsx';
+import MonthlyPartnerEmail from './emails/MonthlyPartnerEmail.jsx';
+import { getPaystackLink, isPresetAmount } from './utils/paystack-links.js';
 
 export default async function handler(req, res) {
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -18,7 +29,7 @@ export default async function handler(req, res) {
 
         // Connect to MongoDB
         const client = await clientPromise;
-        const db = client.db();
+        const db = client.db('Fotia_db');
         const donations = db.collection('donations');
 
         // Find the donation
@@ -28,45 +39,38 @@ export default async function handler(req, res) {
             return res.status(404).json({ error: 'Donation not found' });
         }
 
-        // Determine email template based on donation type
-        const isMonthly = donation.donationType === 'monthly';
+        // Generate email based on donation type
+        let emailHtml;
+        let subject;
 
-        const emailSubject = isMonthly
-            ? 'Thank You for Becoming a Monthly Partner!'
-            : 'Thank You for Your Generous Donation!';
+        if (donation.donationType === 'one-time') {
+            emailHtml = await render(
+                OneTimeDonorEmail({
+                    donorName: donation.fullName.split(' ')[0],
+                    amount: donation.oneTimeAmount,
+                })
+            );
+            subject = 'Thank You for Your Gift to Fotia Network!';
+        } else {
+            const paystackLink = getPaystackLink(donation.monthlyAmount);
+            const isCustom = !isPresetAmount(donation.monthlyAmount);
 
-        const emailHtml = isMonthly
-            ? `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #2563eb;">Thank You, ${donation.name}!</h1>
-          <p>We are thrilled to welcome you as a Monthly Partner.</p>
-          <p>Your monthly commitment of <strong>$${donation.amount}</strong> will make a lasting impact.</p>
-          <p>As a monthly partner, you'll receive:</p>
-          <ul>
-            <li>Regular updates on our mission</li>
-            <li>Exclusive partner newsletters</li>
-            <li>Early access to events</li>
-          </ul>
-          <p>Thank you for your continued support!</p>
-          <p>With gratitude,<br>The Team</p>
-        </div>
-      `
-            : `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #7c3aed;">Thank You, ${donation.name}!</h1>
-          <p>We are deeply grateful for your generous donation of <strong>$${donation.amount}</strong>.</p>
-          <p>Your contribution will help us continue our important work and make a real difference.</p>
-          <p>A receipt for your donation has been attached for your records.</p>
-          <p>Thank you for your support!</p>
-          <p>With gratitude,<br>The Team</p>
-        </div>
-      `;
+            emailHtml = await render(
+                MonthlyPartnerEmail({
+                    donorName: donation.fullName.split(' ')[0],
+                    amount: donation.monthlyAmount,
+                    paystackLink: paystackLink,
+                    isCustomAmount: isCustom,
+                })
+            );
+            subject = 'Welcome to the Fotia Partner Family!';
+        }
 
         // Send email via Resend
         const emailResponse = await resend.emails.send({
-            from: 'Fotia Network <partners@fotianetwork.org',
+            from: 'Fotia Network <partners@fotianetwork.org>',
             to: [donation.email],
-            subject: emailSubject,
+            subject: subject,
             html: emailHtml,
         });
 
@@ -96,7 +100,7 @@ export default async function handler(req, res) {
         if (req.body.donationId) {
             try {
                 const client = await clientPromise;
-                const db = client.db();
+                const db = client.db('Fotia_db');
                 await db.collection('donations').updateOne(
                     { _id: new ObjectId(req.body.donationId) },
                     {

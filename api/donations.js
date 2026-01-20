@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { fullName, email, phone, donationType, monthlyAmount, oneTimeAmount } = req.body;
+        const { fullName, email, phone, donationType, amount } = req.body;
 
         // Validate required fields
         if (!fullName || !email || !donationType) {
@@ -32,14 +32,17 @@ export default async function handler(req, res) {
         const db = client.db('Fotia_db');
         const donations = db.collection('donations');
 
+        // Parse amount
+        const parsedAmount = amount ? parseInt(amount.replace(/,/g, '')) : null;
+
         // Create donation record
         const donation = {
             fullName,
             email,
             phone,
             donationType,
-            monthlyAmount: donationType === 'monthly' ? monthlyAmount : null,
-            oneTimeAmount: donationType === 'one-time' ? oneTimeAmount : null,
+            monthlyAmount: donationType === 'monthly' ? parsedAmount : null,
+            oneTimeAmount: donationType === 'one-time' ? parsedAmount : null,
             createdAt: new Date(),
             emailSent: false,
         };
@@ -58,19 +61,19 @@ export default async function handler(req, res) {
                 emailHtml = await render(
                     OneTimeDonorEmail({
                         donorName: fullName.split(' ')[0], // First name only
-                        amount: oneTimeAmount,
+                        amount: parsedAmount,
                     })
                 );
                 subject = 'Thank You for Your Gift to Fotia Network!';
             } else {
                 // Template B: Monthly Partner
-                const paystackLink = getPaystackLink(monthlyAmount);
-                const isCustom = !isPresetAmount(monthlyAmount);
+                const paystackLink = getPaystackLink(parsedAmount);
+                const isCustom = !isPresetAmount(parsedAmount);
 
                 emailHtml = await render(
                     MonthlyPartnerEmail({
                         donorName: fullName.split(' ')[0], // First name only
-                        amount: monthlyAmount,
+                        amount: parsedAmount,
                         paystackLink: paystackLink,
                         isCustomAmount: isCustom,
                     })
@@ -91,13 +94,16 @@ export default async function handler(req, res) {
             // Update donation record to mark email as sent
             await donations.updateOne(
                 { _id: result.insertedId },
-                { $set: { emailSent: true, emailId: emailResult.id } }
+                { $set: { emailSent: true, emailId: emailResult.id, emailSentAt: new Date() } }
             );
 
         } catch (emailError) {
             console.error('Failed to send email:', emailError);
-            // Don't fail the request - donation was saved successfully
-            // Just log the error for monitoring
+            // Update donation to mark email as failed
+            await donations.updateOne(
+                { _id: result.insertedId },
+                { $set: { emailSent: false, emailError: emailError.message } }
+            );
         }
 
         return res.status(201).json({
@@ -107,6 +113,9 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('Error processing donation:', error);
-        return res.status(500).json({ message: 'Internal server error' });
+        return res.status(500).json({
+            message: 'Internal server error',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 }
