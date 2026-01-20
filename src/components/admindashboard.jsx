@@ -1,565 +1,415 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Header from './Header';
 import Footer from './Footer';
+import {Users, DollarSign, TrendingUp, Calendar, Mail, RefreshCw, Check, X, Clock, Download, Table, LayoutGrid, Filter, ChevronDown} from 'lucide-react';
 
-export default function AdminDonations() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [password, setPassword] = useState('');
-    const [authError, setAuthError] = useState('');
+const AdminDashboard = () => {
     const [donations, setDonations] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [filter, setFilter] = useState('all');
-    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState('card'); // 'card' or 'table'
+    const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'one-time', 'monthly'
+    const [emailFilter, setEmailFilter] = useState('all'); // 'all', 'sent', 'failed'
+    const [resendingId, setResendingId] = useState(null);
 
-    // Pagination states
-    const [currentPage, setCurrentPage] = useState(1);
-    const [donationsPerPage] = useState(10);
-    const [hasMore, setHasMore] = useState(true);
-    const [totalDonationsCount, setTotalDonationsCount] = useState(0);
-
-    // Search state
-    const [searchTerm, setSearchTerm] = useState('');
-
-    // Sort state
-    const [sortBy, setSortBy] = useState('date-desc'); // date-desc, date-asc, amount-desc, amount-asc
-
-    // View mode state
-    const [viewMode, setViewMode] = useState('card'); // card or table
-
-    // Authentication Check
     useEffect(() => {
-        const auth = sessionStorage.getItem('adminAuth');
-        if (auth === 'authenticated') {
-            setIsAuthenticated(true);
-        }
+        fetchDonations();
     }, []);
 
-    const handleLogin = (e) => {
-        e.preventDefault();
-        if (password === 'fotia2024') {
-            setIsAuthenticated(true);
-            sessionStorage.setItem('adminAuth', 'authenticated');
-            setAuthError('');
-        } else {
-            setAuthError('Incorrect password. Please try again.');
-        }
-    };
-
-    const handleLogout = () => {
-        setIsAuthenticated(false);
-        sessionStorage.removeItem('adminAuth');
-        setPassword('');
-        setDonations([]);
-        setCurrentPage(1);
-        setHasMore(true);
-        setTotalDonationsCount(0);
-        setError(null);
-    };
-
-    const fetchDonations = useCallback(async (append = false) => {
-        setLoading(true);
-        setError(null);
-
+    const fetchDonations = async () => {
         try {
-            const url = new URL(`${window.location.origin}/api/get-donations`);
-            if (filter !== 'all') {
-                url.searchParams.append('donationType', filter);
-            }
-            if (searchTerm) {
-                url.searchParams.append('search', searchTerm);
-            }
-            url.searchParams.append('page', currentPage);
-            url.searchParams.append('limit', donationsPerPage);
-
-            const response = await fetch(url.toString(), {
-                headers: {
-                    'Authorization': 'Basic ' + btoa('admin:fotia2024')
-                }
-            });
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    handleLogout();
-                    throw new Error('Authentication expired or invalid. Please log in again.');
-                }
-                throw new Error('Failed to fetch donations');
-            }
-
+            const response = await fetch('/api/donations');
             const data = await response.json();
-
-            if (append) {
-                setDonations((prevDonations) => [...prevDonations, ...data.donations]);
-            } else {
-                setDonations(data.donations);
-            }
-            setTotalDonationsCount(data.totalDonations);
-            setHasMore(data.donations.length === donationsPerPage);
-        } catch (err) {
-            setError(err.message);
+            setDonations(data);
+        } catch (error) {
+            console.error('Error fetching donations:', error);
         } finally {
             setLoading(false);
         }
-    }, [filter, currentPage, donationsPerPage, searchTerm]);
-
-    useEffect(() => {
-        if (isAuthenticated) {
-            setCurrentPage(1);
-            setDonations([]);
-            setHasMore(true);
-            fetchDonations(false);
-        }
-    }, [filter, isAuthenticated, searchTerm, fetchDonations]);
-
-    const handleLoadMore = () => {
-        setCurrentPage((prevPage) => prevPage + 1);
     };
 
-    const handleSearchChange = (e) => {
-        setSearchTerm(e.target.value);
-    };
+    // Stats calculations
+    const totalDonations = donations.length;
+    const totalAmount = donations.reduce((sum, d) => sum + (d.amount || 0), 0);
+    const monthlyDonors = donations.filter(d => d.donationType === 'monthly').length;
+    const emailsSent = donations.filter(d => d.emailSent === true).length;
+    const emailSuccessRate = totalDonations > 0
+        ? Math.round((emailsSent / totalDonations) * 100)
+        : 0;
 
-    // Sort donations
-    const sortedDonations = [...donations].sort((a, b) => {
-        switch (sortBy) {
-            case 'date-desc':
-                return new Date(b.createdAt) - new Date(a.createdAt);
-            case 'date-asc':
-                return new Date(a.createdAt) - new Date(b.createdAt);
-            case 'amount-desc':
-                return (parseFloat(b.amount?.replace(/,/g, '') || 0)) - (parseFloat(a.amount?.replace(/,/g, '') || 0));
-            case 'amount-asc':
-                return (parseFloat(a.amount?.replace(/,/g, '') || 0)) - (parseFloat(b.amount?.replace(/,/g, '') || 0));
-            default:
-                return 0;
-        }
+    // Filtering logic
+    const filteredDonations = donations.filter(donation => {
+        // Type filter
+        if (typeFilter === 'one-time' && donation.donationType !== 'one-time') return false;
+        if (typeFilter === 'monthly' && donation.donationType !== 'monthly') return false;
+
+        // Email filter
+        if (emailFilter === 'sent' && donation.emailSent !== true) return false;
+        if (emailFilter === 'failed' && donation.emailSent === true) return false;
+
+        return true;
     });
 
-    // Calculate statistics
-    const stats = {
-        total: totalDonationsCount,
-        oneTime: filter === 'one-time' ? totalDonationsCount : donations.filter(d => d.donationType === 'one-time').length,
-        monthly: filter === 'monthly' ? totalDonationsCount : donations.filter(d => d.donationType === 'monthly').length,
-        totalAmount: donations.reduce((sum, d) => sum + (parseFloat(d.amount?.replace(/,/g, '') || 0)), 0)
+    // Resend email handler
+    const handleResendEmail = async (donationId) => {
+        setResendingId(donationId);
+        try {
+            const response = await fetch('/api/resend-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ donationId }),
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Update local state
+                setDonations(prev => prev.map(d =>
+                    d._id === donationId
+                        ? { ...d, emailSent: true, emailSentAt: new Date().toISOString() }
+                        : d
+                ));
+                alert('Email sent successfully!');
+            } else {
+                alert('Failed to send email: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error resending email:', error);
+            alert('Error resending email');
+        } finally {
+            setResendingId(null);
+        }
     };
 
-    // Download as CSV
-    const downloadCSV = () => {
-        const headers = ['Date', 'Name', 'Email', 'Phone', 'Type', 'Amount', 'Prayer Request'];
-        const csvContent = [
-            headers.join(','),
-            ...sortedDonations.map(d => {
-                const date = new Date(d.createdAt);
-                const formattedDate = `"${date.toLocaleDateString()} ${date.toLocaleTimeString()}"`;
-                return [
-                    formattedDate,
-                    `"${d.fullName}"`,
-                    d.email,
-                    d.phone,
-                    d.donationType,
-                    `"${d.amount || ''}"`,
-                    `"${(d.prayerRequest || '').replace(/"/g, '""')}"`
-                ].join(',');
-            })
-        ].join('\n');
+    // CSV Export
+    const exportToCSV = () => {
+        const headers = ['Name', 'Email', 'Amount', 'Type', 'Date', 'Email Status', 'Email Sent Date'];
+        const rows = filteredDonations.map(d => [
+            d.name || '',
+            d.email || '',
+            d.amount || 0,
+            d.donationType || 'one-time',
+            new Date(d.createdAt).toLocaleDateString(),
+            d.emailSent ? 'Sent' : 'Pending/Failed',
+            d.emailSentAt ? new Date(d.emailSentAt).toLocaleDateString() : ''
+        ]);
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
+        const csvContent = [headers, ...rows]
+            .map(row => row.map(cell => `"${cell}"`).join(','))
+            .join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `fotia-donations-${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `donations-${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
-        window.URL.revokeObjectURL(url);
+        URL.revokeObjectURL(url);
     };
 
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
-    // Login Screen with reduced spacing
-    if (!isAuthenticated) {
+    // Email status badge component
+    const EmailStatusBadge = ({ emailSent, emailSentAt }) => {
+        if (emailSent === true) {
+            const date = emailSentAt ? new Date(emailSentAt).toLocaleDateString() : 'N/A';
+            return (
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          <Check size={12} />
+          Sent {date}
+        </span>
+            );
+        }
+        if (emailSent === false) {
+            return (
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+          <X size={12} />
+          Failed
+        </span>
+            );
+        }
         return (
-            <>
-                <Header isAuthenticated={isAuthenticated} onLogout={handleLogout} />
-                <div className="min-h-[calc(100vh-200px)] bg-gray-50 flex items-center justify-center py-8 px-4">
-                    <div className="max-w-md w-full">
-                        <div className="bg-white rounded-2xl shadow-xl p-8">
-                            <div className="text-center mb-6">
-                                <div className="bg-yellow-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                    </svg>
-                                </div>
-                                <h2 className="text-3xl font-bold text-gray-900 mb-2">Admin Access</h2>
-                                <p className="text-gray-600">Enter password to view donations</p>
-                            </div>
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+        <Clock size={12} />
+        Pending
+      </span>
+        );
+    };
 
-                            <form onSubmit={handleLogin} className="space-y-6">
-                                <div>
-                                    <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Password
-                                    </label>
-                                    <input
-                                        type="password"
-                                        id="password"
-                                        value={password}
-                                        onChange={(e) => {
-                                            setPassword(e.target.value);
-                                            setAuthError('');
-                                        }}
-                                        placeholder="Enter admin password"
-                                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
-                                        required
-                                    />
-                                    {authError && (
-                                        <p className="text-red-600 text-sm mt-2 flex items-center gap-2">
-                                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                            </svg>
-                                            {authError}
-                                        </p>
-                                    )}
-                                </div>
+    // Donation type badge
+    const TypeBadge = ({ type }) => (
+        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+            type === 'monthly'
+                ? 'bg-blue-100 text-blue-800'
+                : 'bg-purple-100 text-purple-800'
+        }`}>
+      {type === 'monthly' ? 'Monthly Partner' : 'One-Time'}
+    </span>
+    );
 
-                                <button
-                                    type="submit"
-                                    className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg hover:shadow-xl"
-                                >
-                                    Access Dashboard
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                <Footer />
-            </>
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <RefreshCw className="animate-spin" size={32} />
+            </div>
         );
     }
 
-    // Main Dashboard
     return (
-        <>
-            <Header isAuthenticated={isAuthenticated} onLogout={handleLogout} />
-            <div className="min-h-screen bg-gray-50 py-8">
-                <div className="max-w-7xl mx-auto px-4">
-                    {/* Statistics Cards */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
-                        <div className="bg-white rounded-lg shadow p-3 lg:p-4">
-                            <p className="text-xs lg:text-sm text-gray-500 mb-1">Total Submissions</p>
-                            <p className="text-xl lg:text-2xl font-bold text-gray-900">{stats.total}</p>
-                        </div>
-                        <div className="bg-blue-50 rounded-lg shadow p-3 lg:p-4">
-                            <p className="text-xs lg:text-sm text-blue-600 mb-1">One-Time Gifts</p>
-                            <p className="text-xl lg:text-2xl font-bold text-blue-900">{stats.oneTime}</p>
-                        </div>
-                        <div className="bg-yellow-50 rounded-lg shadow p-3 lg:p-4">
-                            <p className="text-xs lg:text-sm text-yellow-600 mb-1">Monthly Partners</p>
-                            <p className="text-xl lg:text-2xl font-bold text-yellow-900">{stats.monthly}</p>
-                        </div>
-                        <div className="bg-green-50 rounded-lg shadow p-3 lg:p-4">
-                            <p className="text-xs lg:text-sm text-green-600 mb-1 truncate">Total Amount</p>
-                            <p className="text-lg lg:text-2xl font-bold text-green-900 truncate">₦{stats.totalAmount.toLocaleString()}</p>
-                        </div>
-                    </div>
-
-                    {/* Controls Panel */}
-                    <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
-                            <h1 className="text-3xl font-bold text-gray-900">
-                                Donation Submissions
-                            </h1>
-
-                            {/* Action Buttons */}
-                            <div className="flex flex-wrap gap-2">
-                                <button
-                                    onClick={downloadCSV}
-                                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    Export CSV
-                                </button>
-
-                                {/* View Mode Toggle */}
-                                <div className="flex bg-gray-100 rounded-lg p-1">
-                                    <button
-                                        onClick={() => setViewMode('card')}
-                                        className={`px-3 py-1 rounded transition-colors ${
-                                            viewMode === 'card'
-                                                ? 'bg-white text-blue-600 shadow'
-                                                : 'text-gray-600 hover:text-gray-900'
-                                        }`}
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                                        </svg>
-                                    </button>
-                                    <button
-                                        onClick={() => setViewMode('table')}
-                                        className={`px-3 py-1 rounded transition-colors ${
-                                            viewMode === 'table'
-                                                ? 'bg-white text-blue-600 shadow'
-                                                : 'text-gray-600 hover:text-gray-900'
-                                        }`}
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col lg:flex-row gap-4">
-                            {/* Search Bar */}
-                            <div className="relative flex-1">
-                                <input
-                                    type="text"
-                                    placeholder="Search by name..."
-                                    value={searchTerm}
-                                    onChange={handleSearchChange}
-                                    className="w-full px-4 py-2 pl-10 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
-                                />
-                                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </div>
-
-                            {/* Sort Dropdown */}
-                            <select
-                                value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value)}
-                                className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
-                            >
-                                <option value="date-desc">Newest First</option>
-                                <option value="date-asc">Oldest First</option>
-                                <option value="amount-desc">Highest Amount</option>
-                                <option value="amount-asc">Lowest Amount</option>
-                            </select>
-                        </div>
-
-                        {/* Filter Buttons */}
-                        <div className="flex gap-2 flex-wrap mt-4">
-                            <button
-                                onClick={() => {
-                                    setFilter('all');
-                                    setCurrentPage(1);
-                                    setDonations([]);
-                                    setHasMore(true);
-                                }}
-                                className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                                    filter === 'all'
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
-                            >
-                                All ({stats.total})
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setFilter('one-time');
-                                    setCurrentPage(1);
-                                    setDonations([]);
-                                    setHasMore(true);
-                                }}
-                                className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                                    filter === 'one-time'
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
-                            >
-                                One-Time ({stats.oneTime})
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setFilter('monthly');
-                                    setCurrentPage(1);
-                                    setDonations([]);
-                                    setHasMore(true);
-                                }}
-                                className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                                    filter === 'monthly'
-                                        ? 'bg-yellow-600 text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
-                            >
-                                Monthly ({stats.monthly})
-                            </button>
-                        </div>
-                    </div>
-
-                    {error && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto mb-4">
-                            <p className="text-red-800 font-semibold mb-2">Error loading donations</p>
-                            <p className="text-red-600">{error}</p>
-                        </div>
-                    )}
-
-                    {(loading && donations.length === 0) ? (
-                        <div className="min-h-48 bg-white flex items-center justify-center rounded-lg shadow-lg">
-                            <div className="text-center">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                                <p className="text-gray-600">Loading donations...</p>
-                            </div>
-                        </div>
-                    ) : donations.length === 0 ? (
-                        <div className="bg-white rounded-lg shadow p-12 text-center">
-                            <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                            </svg>
-                            <p className="text-gray-500 text-lg">No donations found</p>
-                        </div>
-                    ) : viewMode === 'card' ? (
-                        // Card View
-                        <div className="grid gap-4">
-                            {sortedDonations.map((donation) => (
-                                <div
-                                    key={donation._id}
-                                    className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-                                >
-                                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <span
-                                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                                        donation.donationType === 'monthly'
-                                                            ? 'bg-yellow-100 text-yellow-800'
-                                                            : 'bg-blue-100 text-blue-800'
-                                                    }`}
-                                                >
-                                                    {donation.donationType === 'monthly' ? 'Monthly Partner' : 'One-Time Gift'}
-                                                </span>
-                                                <span className="text-sm text-gray-500">
-                                                    {formatDate(donation.createdAt)}
-                                                </span>
-                                            </div>
-
-                                            <h3 className="text-xl font-bold text-gray-900 mb-2">
-                                                {donation.fullName}
-                                            </h3>
-
-                                            <div className="grid md:grid-cols-2 gap-4 mb-4">
-                                                <div>
-                                                    <p className="text-sm text-gray-500">Email</p>
-                                                    <p className="text-gray-900">{donation.email}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm text-gray-500">Phone</p>
-                                                    <p className="text-gray-900">{donation.phone}</p>
-                                                </div>
-                                            </div>
-
-                                            {donation.amount && (
-                                                <div className="mb-4">
-                                                    <p className="text-sm text-gray-500">Amount</p>
-                                                    <p className="text-2xl font-bold text-green-600">
-                                                        ₦{donation.amount}
-                                                    </p>
-                                                </div>
-                                            )}
-
-                                            {donation.prayerRequest && (
-                                                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                                                    <p className="text-sm font-semibold text-blue-900 mb-1">
-                                                        Prayer Request:
-                                                    </p>
-                                                    <p className="text-blue-800">{donation.prayerRequest}</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        // Table View
-                        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead className="bg-gray-50 border-b-2 border-gray-200">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Contact</th>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Type</th>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount</th>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Prayer</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200">
-                                    {sortedDonations.map((donation) => (
-                                        <tr key={donation._id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {new Date(donation.createdAt).toLocaleDateString()}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-gray-900">{donation.fullName}</div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm text-gray-900">{donation.email}</div>
-                                                <div className="text-sm text-gray-500">{donation.phone}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                                        donation.donationType === 'monthly'
-                                                            ? 'bg-yellow-100 text-yellow-800'
-                                                            : 'bg-blue-100 text-blue-800'
-                                                    }`}>
-                                                        {donation.donationType === 'monthly' ? 'Monthly' : 'One-Time'}
-                                                    </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                                                {donation.amount ? `₦${donation.amount}` : '-'}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {donation.prayerRequest ? (
-                                                    <div className="text-sm text-gray-600 max-w-xs truncate" title={donation.prayerRequest}>
-                                                        {donation.prayerRequest}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-gray-400">-</span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {hasMore && donations.length > 0 && (
-                        <div className="text-center mt-8">
-                            <button
-                                onClick={handleLoadMore}
-                                disabled={loading}
-                                className="px-8 py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
-                            >
-                                {loading ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                                        Loading...
-                                    </>
-                                ) : (
-                                    <>
-                                        Load More
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    )}
+        <div className="min-h-screen bg-gray-50 p-6">
+            <Header />
+            <div className="max-w-7xl mx-auto">
+                {/* Header */}
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+                    <p className="text-gray-600 mt-1">Manage donations and email communications</p>
                 </div>
+
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                    {/* Total Donations */}
+                    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-gray-500">Total Donations</p>
+                                <p className="text-2xl font-bold text-gray-900">{totalDonations}</p>
+                            </div>
+                            <div className="p-3 bg-blue-100 rounded-lg">
+                                <Users className="text-blue-600" size={24} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Total Amount */}
+                    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-gray-500">Total Amount</p>
+                                <p className="text-2xl font-bold text-gray-900">${totalAmount.toLocaleString()}</p>
+                            </div>
+                            <div className="p-3 bg-green-100 rounded-lg">
+                                <DollarSign className="text-green-600" size={24} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Monthly Donors */}
+                    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-gray-500">Monthly Partners</p>
+                                <p className="text-2xl font-bold text-gray-900">{monthlyDonors}</p>
+                            </div>
+                            <div className="p-3 bg-orange-100 rounded-lg">
+                                <Calendar className="text-orange-600" size={24} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* This Month */}
+                    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-gray-500">This Month</p>
+                                <p className="text-2xl font-bold text-gray-900">
+                                    {donations.filter(d => {
+                                        const donationDate = new Date(d.createdAt);
+                                        const now = new Date();
+                                        return donationDate.getMonth() === now.getMonth() &&
+                                            donationDate.getFullYear() === now.getFullYear();
+                                    }).length}
+                                </p>
+                            </div>
+                            <div className="p-3 bg-indigo-100 rounded-lg">
+                                <TrendingUp className="text-indigo-600" size={24} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Emails Sent - NEW */}
+                    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-gray-500">Emails Sent</p>
+                                <p className="text-2xl font-bold text-gray-900">{emailsSent}</p>
+                                <p className="text-xs text-gray-400 mt-1">{emailSuccessRate}% success rate</p>
+                            </div>
+                            <div className="p-3 bg-purple-100 rounded-lg">
+                                <Mail className="text-purple-600" size={24} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Filters & Controls */}
+                <div className="bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                        {/* Type Filter */}
+                        <div className="flex items-center gap-2">
+                            <Filter size={16} className="text-gray-400" />
+                            <span className="text-sm text-gray-500">Type:</span>
+                            <div className="flex gap-1">
+                                {['all', 'one-time', 'monthly'].map(filter => (
+                                    <button
+                                        key={filter}
+                                        onClick={() => setTypeFilter(filter)}
+                                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                                            typeFilter === filter
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {filter === 'all' ? 'All' : filter === 'one-time' ? 'One-Time' : 'Monthly'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Email Filter */}
+                        <div className="flex items-center gap-2">
+                            <Mail size={16} className="text-gray-400" />
+                            <span className="text-sm text-gray-500">Email:</span>
+                            <div className="flex gap-1">
+                                {['all', 'sent', 'failed'].map(filter => (
+                                    <button
+                                        key={filter}
+                                        onClick={() => setEmailFilter(filter)}
+                                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                                            emailFilter === filter
+                                                ? 'bg-purple-600 text-white'
+                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {filter === 'all' ? 'All' : filter === 'sent' ? 'Sent' : 'Pending/Failed'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* View Mode & Export */}
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setViewMode('card')}
+                                className={`p-2 rounded-lg transition-colors ${
+                                    viewMode === 'card' ? 'bg-gray-200' : 'hover:bg-gray-100'
+                                }`}
+                            >
+                                <LayoutGrid size={18} />
+                            </button>
+                            <button
+                                onClick={() => setViewMode('table')}
+                                className={`p-2 rounded-lg transition-colors ${
+                                    viewMode === 'table' ? 'bg-gray-200' : 'hover:bg-gray-100'
+                                }`}
+                            >
+                                <Table size={18} />
+                            </button>
+                            <button
+                                onClick={exportToCSV}
+                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                                <Download size={16} />
+                                Export CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Results Count */}
+                <p className="text-sm text-gray-500 mb-4">
+                    Showing {filteredDonations.length} of {totalDonations} donations
+                </p>
+
+                {/* Card View */}
+                {viewMode === 'card' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredDonations.map(donation => (
+                            <div key={donation._id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900">{donation.name}</h3>
+                                        <p className="text-sm text-gray-500">{donation.email}</p>
+                                    </div>
+                                    <p className="text-xl font-bold text-green-600">${donation.amount}</p>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-2 mb-4">
+                                    <TypeBadge type={donation.donationType} />
+                                    <EmailStatusBadge emailSent={donation.emailSent} emailSentAt={donation.emailSentAt} />
+                                </div>
+
+                                <div className="flex items-center justify-between text-sm text-gray-500">
+                                    <span>{new Date(donation.createdAt).toLocaleDateString()}</span>
+
+                                    {donation.emailSent !== true && (
+                                        <button
+                                            onClick={() => handleResendEmail(donation._id)}
+                                            disabled={resendingId === donation._id}
+                                            className="flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
+                                        >
+                                            <RefreshCw size={14} className={resendingId === donation._id ? 'animate-spin' : ''} />
+                                            Resend
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Table View */}
+                {viewMode === 'table' && (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-gray-50 border-b border-gray-100">
+                                <tr>
+                                    <th className="text-left p-4 font-medium text-gray-600">Name</th>
+                                    <th className="text-left p-4 font-medium text-gray-600">Email</th>
+                                    <th className="text-left p-4 font-medium text-gray-600">Amount</th>
+                                    <th className="text-left p-4 font-medium text-gray-600">Type</th>
+                                    <th className="text-left p-4 font-medium text-gray-600">Date</th>
+                                    <th className="text-left p-4 font-medium text-gray-600">Email Status</th>
+                                    <th className="text-left p-4 font-medium text-gray-600">Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {filteredDonations.map(donation => (
+                                    <tr key={donation._id} className="border-b border-gray-50 hover:bg-gray-50">
+                                        <td className="p-4 font-medium text-gray-900">{donation.name}</td>
+                                        <td className="p-4 text-gray-600">{donation.email}</td>
+                                        <td className="p-4 font-semibold text-green-600">${donation.amount}</td>
+                                        <td className="p-4"><TypeBadge type={donation.donationType} /></td>
+                                        <td className="p-4 text-gray-500">{new Date(donation.createdAt).toLocaleDateString()}</td>
+                                        <td className="p-4">
+                                            <EmailStatusBadge emailSent={donation.emailSent} emailSentAt={donation.emailSentAt} />
+                                        </td>
+                                        <td className="p-4">
+                                            {donation.emailSent !== true && (
+                                                <button
+                                                    onClick={() => handleResendEmail(donation._id)}
+                                                    disabled={resendingId === donation._id}
+                                                    className="p-2 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors disabled:opacity-50"
+                                                    title="Resend email"
+                                                >
+                                                    <RefreshCw size={16} className={resendingId === donation._id ? 'animate-spin' : ''} />
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {filteredDonations.length === 0 && (
+                    <div className="text-center py-12 text-gray-500">
+                        No donations match your filters
+                    </div>
+                )}
             </div>
             <Footer />
-        </>
+        </div>
     );
-}
+};
+
+export default AdminDashboard;
