@@ -1,6 +1,6 @@
 /* global process */
 
-export async function sendEmail({ to, subject, html, fromName = 'Fotia Network', fromEmail = 'fotianetwork@gmail.com', replyTo = 'fotianetwork@gmail.com' }) {
+export async function sendEmail({ to, subject, html, fromName = 'Fotia Network', fromEmail = 'admin@fotianetwork.org', replyTo = 'fotianetwork@gmail.com' }) {
     const apiKey = process.env.SKRYBE_API_KEY;
 
     if (!apiKey) {
