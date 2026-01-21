@@ -1,5 +1,10 @@
 /* global process */
 import { MongoClient } from 'mongodb';
+import dns from 'dns';
+
+// Set a custom DNS resolver.
+dns.setServers(['8.8.8.8']);
+
 
 const uri = process.env.MONGODB_URI;
 const dbName = 'Fotia_db'; // Assuming user has set this in their .env

@@ -8,9 +8,12 @@ const DonationSection = () => {
         fullName: '',
         email: '',
         phone: '',
-        amount: '',
         prayerRequest: ''
     });
+    // State for monthly donations amount selection
+    const [selectedAmount, setSelectedAmount] = useState('20000'); // Default to 20k
+    const [customAmount, setCustomAmount] = useState('');
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
@@ -28,107 +31,67 @@ const DonationSection = () => {
         }));
     };
 
-    // Get the appropriate Paystack link based on amount
-    const getPaystackLink = (amount) => {
-        const PAYSTACK_LINKS = {
-            10000: 'https://paystack.shop/pay/10fotiamonthly',
-            20000: 'https://paystack.shop/pay/20fotiamonthly',
-            50000: 'https://paystack.shop/pay/50fotiamonthly',
-            100000: 'https://paystack.shop/pay/100fotiamonthly',
-        };
-        const PAYSTACK_FLEXIBLE_LINK = 'https://paystack.shop/pay/fotiamonthly';
-
-        const numericAmount = parseInt(amount.replace(/,/g, ''), 10);
-        return PAYSTACK_LINKS[numericAmount] || PAYSTACK_FLEXIBLE_LINK;
+    const showToast = (type, message) => {
+        setToast({ show: true, message, type });
     };
+
+    const amountOptions = [
+        { value: '10000', label: '₦10,000/month' },
+        { value: '20000', label: '₦20,000/month' },
+        { value: '50000', label: '₦50,000/month' },
+        { value: '100000', label: '₦100,000/month' },
+        { value: 'custom', label: 'Custom Amount' }
+    ];
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
 
+        const amountToSubmit = donationType === 'monthly'
+            ? (selectedAmount === 'custom' ? customAmount : selectedAmount)
+            : formData.amount;
+
         try {
-            // For MONTHLY partners - save to database then redirect to Paystack
-            if (donationType === 'monthly') {
-                // Save to database first
-                const response = await fetch('/api/donations', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        ...formData,
-                        donationType
-                    }),
-                });
+            const payload = {
+                ...formData,
+                amount: amountToSubmit,
+                donationType,
+                ...(donationType === 'monthly' && { selectedAmountTier: selectedAmount }) // Only for monthly
+            };
 
-                if (response.ok) {
-                    // Get the Paystack link and redirect
-                    const paystackLink = getPaystackLink(formData.amount || '0');
+            const response = await fetch('/api/donations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
-                    // Show quick success message
-                    setToast({
-                        show: true,
-                        message: 'Redirecting you to complete your monthly partnership setup...',
-                        type: 'success'
-                    });
+            const data = await response.json();
 
-                    // Redirect after a short delay
+            if (data.success) {
+                if (donationType === 'monthly' && data.redirectUrl) {
+                    showToast('success', data.message || 'Redirecting to payment...');
                     setTimeout(() => {
-                        window.location.href = paystackLink;
-                    }, 1500);
+                        window.location.href = data.redirectUrl;
+                    }, 1500); // Give user time to read toast
                 } else {
-                    const data = await response.json();
-                    setToast({
-                        show: true,
-                        message: data.message || 'Something went wrong. Please try again.',
-                        type: 'error'
-                    });
-                    setIsSubmitting(false);
+                    showToast('success', data.message || 'Thank you for your gift! We sent a confirmation email.');
+                    // Reset form for one-time
+                    if (donationType === 'one-time') {
+                        setFormData({
+                            fullName: '',
+                            email: '',
+                            phone: '',
+                            prayerRequest: '',
+                            amount: '' // Also reset amount for one-time
+                        });
+                    }
                 }
-            }
-            // For ONE-TIME donors - save to database and send email
-            else {
-                const response = await fetch('/api/donations', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        ...formData,
-                        donationType
-                    }),
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    setToast({
-                        show: true,
-                        message: 'Thank you! We\'ve received your information and sent you a confirmation email.',
-                        type: 'success'
-                    });
-                    setFormData({
-                        fullName: '',
-                        email: '',
-                        phone: '',
-                        amount: '',
-                        prayerRequest: ''
-                    });
-                } else {
-                    setToast({
-                        show: true,
-                        message: data.message || 'Something went wrong. Please try again.',
-                        type: 'error'
-                    });
-                }
-                setIsSubmitting(false);
+            } else {
+                showToast('error', data.message || 'Submission failed. Please try again.');
             }
         } catch (error) {
-            setToast({
-                show: true,
-                message: error.message || 'Network error. Please check your connection and try again.',
-                type: 'error'
-            });
+            showToast('error', error.message || 'Network error. Please check your connection and try again.');
+        } finally {
             setIsSubmitting(false);
         }
     };
@@ -424,27 +387,77 @@ const DonationSection = () => {
                                     />
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        {donationType === 'monthly' ? 'Monthly commitment amount *' : 'Amount given (optional)'}
-                                    </label>
-                                    <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
-                                        <input
-                                            type="text"
-                                            id="amount"
-                                            name="amount"
-                                            value={formData.amount}
-                                            onChange={handleInputChange}
-                                            placeholder={donationType === 'monthly' ? 'e.g., 10,000' : 'e.g., 50,000'}
-                                            className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
-                                            required={donationType === 'monthly'}
-                                        />
+                                {donationType === 'monthly' && (
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                            Select Monthly Amount *
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {amountOptions.map((option) => (
+                                                <div key={option.value} className="flex items-center">
+                                                    <input
+                                                        type="radio"
+                                                        id={`amount-${option.value}`}
+                                                        name="selectedAmount"
+                                                        value={option.value}
+                                                        checked={selectedAmount === option.value}
+                                                        onChange={(e) => setSelectedAmount(e.target.value)}
+                                                        className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300"
+                                                    />
+                                                    <label htmlFor={`amount-${option.value}`} className="ml-2 block text-sm text-gray-700 cursor-pointer">
+                                                        {option.label}
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {selectedAmount === 'custom' && (
+                                            <div className="mt-3">
+                                                <label htmlFor="customAmount" className="sr-only">Custom Amount</label>
+                                                <div className="relative">
+                                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
+                                                    <input
+                                                        type="text"
+                                                        id="customAmount"
+                                                        name="customAmount"
+                                                        value={customAmount}
+                                                        onChange={(e) => setCustomAmount(e.target.value)}
+                                                        placeholder="e.g., 25,000"
+                                                        className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
+                                                        required={selectedAmount === 'custom'}
+                                                        min="1000" // Minimum custom amount
+                                                    />
+                                                </div>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    Enter the amount you'd like to give monthly
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        {donationType === 'monthly' ? 'Enter the amount you\'d like to give monthly' : 'Helps us track and acknowledge your gift'}
-                                    </p>
-                                </div>
+                                )}
+
+
+                                {donationType === 'one-time' && (
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                            Amount given (optional)
+                                        </label>
+                                        <div className="relative">
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
+                                            <input
+                                                type="text"
+                                                id="amount"
+                                                name="amount"
+                                                value={formData.amount}
+                                                onChange={handleInputChange}
+                                                placeholder={'e.g., 50,000'}
+                                                className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
+                                            />
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Helps us track and acknowledge your gift
+                                        </p>
+                                    </div>
+                                )}
 
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -464,7 +477,7 @@ const DonationSection = () => {
                                 <button
                                     type="submit"
                                     className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={isSubmitting}
+                                    disabled={isSubmitting || (donationType === 'monthly' && selectedAmount === 'custom' && !customAmount)}
                                 >
                                     {isSubmitting
                                         ? (donationType === 'monthly' ? 'Redirecting...' : 'Submitting...')
