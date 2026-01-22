@@ -53,7 +53,11 @@ export default async function handler(req, res) {
 
         // Add search query
         if (search) {
-            query.fullName = {$regex: search, $options: 'i'}; // Changed from fullName to match your schema
+            query.$or = [
+                { fullName: { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } },
+                { paymentReference: { $regex: search, $options: 'i' } }
+            ];
         }
 
         const totalDonations = await collection.countDocuments(query);

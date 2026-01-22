@@ -1,20 +1,25 @@
 import React, { useState } from 'react';
 import Toast from './Toast';
 
+// =================================================================================
+// IMPORTANT: Replace these placeholder URLs with your actual Paystack Payment Links.
+// You can create these in your Paystack Dashboard under "Payment Pages".
+// =================================================================================
+const paystackLinks = {
+    oneTime: 'https://paystack.shop/pay/fotiacrusade', // Example for one-time donations
+    monthly: {
+        10000: 'https://paystack.shop/pay/10fotiamonthly', // Example for ₦10,000/month
+        20000: 'https://paystack.shop/pay/20fotiamonthly', // Example for ₦20,000/month
+        50000: 'https://paystack.shop/pay/50fotiamonthly', // Example for ₦50,000/month
+        100000: 'https://paystack.shop/pay/100fotiamonthly', // Example for ₦100,000/month
+        custom: 'https://paystack.shop/pay/fotiamonthly', // A link where users can enter their own amount
+    }
+};
+
+
 const DonationSection = () => {
     const [donationType, setDonationType] = useState('one-time');
     const [copiedBank, setCopiedBank] = useState(false);
-    const [formData, setFormData] = useState({
-        fullName: '',
-        email: '',
-        phone: '',
-        prayerRequest: ''
-    });
-    // State for monthly donations amount selection
-    const [selectedAmount, setSelectedAmount] = useState('20000'); // Default to 20k
-    const [customAmount, setCustomAmount] = useState('');
-
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
     const copyBankDetails = () => {
@@ -23,78 +28,13 @@ const DonationSection = () => {
         setTimeout(() => setCopiedBank(false), 2000);
     };
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
-    const showToast = (type, message) => {
-        setToast({ show: true, message, type });
-    };
-
-    const amountOptions = [
-        { value: '10000', label: '₦10,000/month' },
-        { value: '20000', label: '₦20,000/month' },
-        { value: '50000', label: '₦50,000/month' },
-        { value: '100000', label: '₦100,000/month' },
+    const monthlyAmountOptions = [
+        { value: '10000', label: '₦10,000' },
+        { value: '20000', label: '₦20,000' },
+        { value: '50000', label: '₦50,000' },
+        { value: '100000', label: '₦100,000' },
         { value: 'custom', label: 'Custom Amount' }
     ];
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-
-        const amountToSubmit = donationType === 'monthly'
-            ? (selectedAmount === 'custom' ? customAmount : selectedAmount)
-            : formData.amount;
-
-        try {
-            const payload = {
-                ...formData,
-                amount: amountToSubmit,
-                donationType,
-                ...(donationType === 'monthly' && { selectedAmountTier: selectedAmount }) // Only for monthly
-            };
-
-            const response = await fetch('/api/donations', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                if (donationType === 'monthly' && data.redirectUrl) {
-                    showToast('success', data.message || 'Redirecting to payment...');
-                    setTimeout(() => {
-                        window.location.href = data.redirectUrl;
-                    }, 1500); // Give user time to read toast
-                } else {
-                    showToast('success', data.message || 'Thank you for your gift! We sent a confirmation email.');
-                    // Reset form for one-time
-                    if (donationType === 'one-time') {
-                        setFormData({
-                            fullName: '',
-                            email: '',
-                            phone: '',
-                            prayerRequest: '',
-                            amount: '' // Also reset amount for one-time
-                        });
-                    }
-                }
-            } else {
-                showToast('error', data.message || 'Submission failed. Please try again.');
-            }
-        } catch (error) {
-            showToast('error', error.message || 'Network error. Please check your connection and try again.');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
 
     return (
         <>
@@ -105,8 +45,8 @@ const DonationSection = () => {
                 onClose={() => setToast({ ...toast, show: false })}
             />
 
-            <section className="py-20 bg-gray-50">
-                <div className="container mx-auto px-4 max-w-7xl">
+            <section className="py-15 bg-gray-50">
+                <div className="container mx-auto px-4 max-w-4xl">
                     <div className="text-center mb-12">
                         <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                             Give a Gift to Fotia Network International
@@ -116,384 +56,157 @@ const DonationSection = () => {
                         </p>
                     </div>
 
-                    <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
-
-                        {/* Left Column: Giving Options */}
-                        <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-                            {/* One-time vs Monthly Toggle */}
-                            <div className="grid grid-cols-2 gap-4 mb-8">
-                                <button
-                                    onClick={() => setDonationType('one-time')}
-                                    className={`relative py-6 px-4 rounded-xl border-2 transition-all ${
-                                        donationType === 'one-time'
-                                            ? 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-500 shadow-lg'
-                                            : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-md'
-                                    }`}
-                                >
-                                    {donationType === 'one-time' && (
-                                        <div className="absolute top-3 right-3">
-                                            <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                            </svg>
-                                        </div>
-                                    )}
-                                    <div className="flex flex-col items-center text-center">
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${
-                                            donationType === 'one-time'
-                                                ? 'bg-blue-500'
-                                                : 'bg-gray-200'
-                                        }`}>
-                                            <svg className={`w-6 h-6 ${donationType === 'one-time' ? 'text-white' : 'text-gray-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                        </div>
-                                        <h4 className={`font-bold text-base mb-1 ${
-                                            donationType === 'one-time' ? 'text-blue-900' : 'text-gray-700'
-                                        }`}>One-Time Gift</h4>
-                                        <p className={`text-xs ${
-                                            donationType === 'one-time' ? 'text-blue-700' : 'text-gray-500'
-                                        }`}>Make an instant impact</p>
+                    <div className="bg-white p-4">
+                        {/* One-time vs Monthly Toggle */}
+                        <div className="grid grid-cols-2 gap-4 mb-8">
+                            <button
+                                onClick={() => setDonationType('one-time')}
+                                className={`relative py-6 px-4 rounded-xl border-2 transition-all ${
+                                    donationType === 'one-time'
+                                        ? 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-500 shadow-lg'
+                                        : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-md'
+                                }`}
+                            >
+                                {donationType === 'one-time' && (
+                                    <div className="absolute top-3 right-3">
+                                        <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
                                     </div>
-                                </button>
-
-                                <button
-                                    onClick={() => setDonationType('monthly')}
-                                    className={`relative py-6 px-4 rounded-xl border-2 transition-all ${
-                                        donationType === 'monthly'
-                                            ? 'bg-gradient-to-br from-yellow-50 to-orange-100 border-yellow-500 shadow-lg'
-                                            : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-md'
-                                    }`}
-                                >
-                                    {donationType === 'monthly' && (
-                                        <div className="absolute top-3 right-3">
-                                            <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                            </svg>
-                                        </div>
-                                    )}
-                                    <div className="flex flex-col items-center text-center">
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${
-                                            donationType === 'monthly'
-                                                ? 'bg-yellow-500'
-                                                : 'bg-gray-200'
-                                        }`}>
-                                            <svg className={`w-6 h-6 ${donationType === 'monthly' ? 'text-white' : 'text-gray-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                            </svg>
-                                        </div>
-                                        <h4 className={`font-bold text-base mb-1 ${
-                                            donationType === 'monthly' ? 'text-yellow-900' : 'text-gray-700'
-                                        }`}>Monthly Partner</h4>
-                                        <p className={`text-xs ${
-                                            donationType === 'monthly' ? 'text-yellow-700' : 'text-gray-500'
-                                        }`}>Sustain the mission</p>
+                                )}
+                                <div className="flex flex-col items-center text-center">
+                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${
+                                        donationType === 'one-time' ? 'bg-blue-500' : 'bg-gray-200'
+                                    }`}>
+                                        <svg className={`w-6 h-6 ${donationType === 'one-time' ? 'text-white' : 'text-gray-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
                                     </div>
-                                </button>
-                            </div>
+                                    <h4 className={`font-bold text-base mb-1 ${donationType === 'one-time' ? 'text-blue-900' : 'text-gray-700'}`}>
+                                        One-Time Gift
+                                    </h4>
+                                    <p className={`text-xs ${donationType === 'one-time' ? 'text-blue-700' : 'text-gray-500'}`}>
+                                        Make an instant impact
+                                    </p>
+                                </div>
+                            </button>
 
-                            {donationType === 'one-time' ? (
-                                // One-Time Gift Options
-                                <div>
-                                    <h3 className="text-xl font-bold text-gray-900 mb-4">Choose Your Giving Method</h3>
+                            <button
+                                onClick={() => setDonationType('monthly')}
+                                className={`relative py-6 px-4 rounded-xl border-2 transition-all ${
+                                    donationType === 'monthly'
+                                        ? 'bg-gradient-to-br from-yellow-50 to-orange-100 border-yellow-500 shadow-lg'
+                                        : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-md'
+                                }`}
+                            >
+                                {donationType === 'monthly' && (
+                                    <div className="absolute top-3 right-3">
+                                        <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                )}
+                                <div className="flex flex-col items-center text-center">
+                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${
+                                        donationType === 'monthly' ? 'bg-yellow-500' : 'bg-gray-200'
+                                    }`}>
+                                        <svg className={`w-6 h-6 ${donationType === 'monthly' ? 'text-white' : 'text-gray-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                        </svg>
+                                    </div>
+                                    <h4 className={`font-bold text-base mb-1 ${donationType === 'monthly' ? 'text-yellow-900' : 'text-gray-700'}`}>
+                                        Monthly Partner
+                                    </h4>
+                                    <p className={`text-xs ${donationType === 'monthly' ? 'text-yellow-700' : 'text-gray-500'}`}>
+                                        Sustain the mission
+                                    </p>
+                                </div>
+                            </button>
+                        </div>
 
-                                    {/* Paystack Option */}
-                                    <div className="mb-6 p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-400 rounded-xl">
-                                        <div className="flex items-start gap-4 mb-4">
-                                            <div className="bg-blue-500 rounded-lg p-3 flex-shrink-0">
-                                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                                </svg>
-                                            </div>
+                        {donationType === 'one-time' ? (
+                            // One-Time Gift Options
+                            <div>
+                                <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">Choose Your Giving Method</h3>
+
+                                {/* Paystack Option */}
+                                <div className="mb-6 p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-400 rounded-xl text-center">
+                                    <h4 className="font-bold text-gray-900 mb-2 text-lg">Online via Card</h4>
+                                    <p className="text-sm text-blue-800 mb-4">
+                                        Use our secure Paystack page for an instant one-time gift.
+                                    </p>
+                                    <a
+                                        href={paystackLinks.oneTime}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-block w-full max-w-xs bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-all"
+                                    >
+                                        Give Securely via Paystack →
+                                    </a>
+                                </div>
+
+                                {/* Bank Transfer Option */}
+                                <div className="p-6 bg-gray-50 border-2 border-gray-200 rounded-xl text-center">
+                                    <h4 className="font-bold text-gray-900 mb-2 text-lg">Direct Bank Transfer</h4>
+                                    <p className="text-sm text-gray-600 mb-4">
+                                        Transfer directly to our ministry account below.
+                                    </p>
+                                    <div className="space-y-3 text-left max-w-sm mx-auto">
+                                        <div className="bg-white p-3 rounded-lg border border-gray-300">
+                                            <p className="text-xs text-gray-600">Bank:</p>
+                                            <p className="font-bold text-gray-900">Access Bank</p>
+                                        </div>
+                                        <div className="bg-white p-3 rounded-lg border border-gray-300 flex justify-between items-center">
                                             <div>
-                                                <h4 className="font-bold text-gray-900 mb-1">Card Payment (Paystack)</h4>
-                                                <p className="text-sm text-blue-700">Instant & Secure</p>
+                                                <p className="text-xs text-gray-600">Account Number:</p>
+                                                <p className="font-bold text-gray-900 font-mono text-base">1834897295</p>
                                             </div>
+                                            <button
+                                                onClick={copyBankDetails}
+                                                className="text-sm font-semibold text-yellow-600 hover:text-yellow-700 px-3 py-1 rounded-lg hover:bg-yellow-50 transition-colors"
+                                            >
+                                                {copiedBank ? '✓ Copied!' : 'Copy'}
+                                            </button>
                                         </div>
+                                        <div className="bg-white p-3 rounded-lg border border-gray-300">
+                                            <p className="text-xs text-gray-600">Account Name:</p>
+                                            <p className="font-bold text-gray-900">Fotia Network Ministries</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4 max-w-sm mx-auto">
+                                        <p className="text-sm text-blue-900 text-left">
+                                            <strong>Important:</strong> After transferring, please <a href="/donation-successful" className="font-bold underline">fill our contact form</a> so we can thank you personally!
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            // Monthly Partner Options
+                            <div className="text-center">
+                                <h3 className="text-xl font-bold text-gray-900 mb-2">Become a Monthly Partner</h3>
+                                <p className="text-gray-600 mb-6">
+                                    Select your monthly partnership level below. You will be redirected to Paystack to complete your secure recurring payment.
+                                </p>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {monthlyAmountOptions.map((option) => (
                                         <a
-                                            href="https://paystack.shop/pay/fotiacrusade"
+                                            key={option.value}
+                                            href={paystackLinks.monthly[option.value]}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-all text-center"
+                                            className="block p-6 bg-gradient-to-br from-yellow-50 to-orange-100 border-2 border-yellow-400 rounded-xl hover:shadow-lg hover:border-yellow-500 transition-all"
                                         >
-                                            Give via Paystack →
+                                            <h4 className="font-bold text-lg text-yellow-900">{option.label}</h4>
+                                            <p className="text-xs text-yellow-800">per month</p>
                                         </a>
-                                        <p className="text-xs text-blue-700 mt-2 text-center">
-                                            You'll be redirected to our secure Paystack page
-                                        </p>
-                                    </div>
-
-                                    {/* Bank Transfer Option */}
-                                    <div className="p-6 bg-gray-50 border-2 border-gray-200 rounded-xl">
-                                        <div className="flex items-start gap-4 mb-4">
-                                            <div className="bg-gray-700 rounded-lg p-3 flex-shrink-0">
-                                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-gray-900 mb-1">Bank Transfer</h4>
-                                                <p className="text-sm text-gray-600">Direct to our account</p>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-3 mb-4">
-                                            <div className="bg-white p-4 rounded-lg border border-gray-300">
-                                                <div className="flex justify-between items-center">
-                                                    <div>
-                                                        <p className="text-sm text-gray-600">Bank Name</p>
-                                                        <p className="font-bold text-gray-900">Access Bank</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="bg-white p-4 rounded-lg border border-gray-300">
-                                                <div className="flex justify-between items-center">
-                                                    <div>
-                                                        <p className="text-sm text-gray-600">Account Number</p>
-                                                        <p className="font-bold text-gray-900 font-mono text-lg">1834897295</p>
-                                                    </div>
-                                                    <button
-                                                        onClick={copyBankDetails}
-                                                        className="text-sm font-semibold text-yellow-600 hover:text-yellow-700 px-4 py-2 rounded-lg hover:bg-yellow-50 transition-colors"
-                                                    >
-                                                        {copiedBank ? '✓ Copied!' : 'Copy'}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div className="bg-white p-4 rounded-lg border border-gray-300">
-                                                <div>
-                                                    <p className="text-sm text-gray-600">Account Name</p>
-                                                    <p className="font-bold text-gray-900">Fotia Network Ministries</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                            <p className="text-sm text-blue-900">
-                                                <strong>After transferring please fill the form</strong> so we can send you a receipt and thank you personally.
-                                            </p>
-                                        </div>
-                                    </div>
+                                    ))}
                                 </div>
-                            ) : (
-                                // Monthly Partner Information
-                                <div>
-                                    <h3 className="text-xl font-bold text-gray-900 mb-4">Become a Monthly Partner</h3>
-                                    <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-400 rounded-xl p-4 sm:p-6 mb-6">
-                                        {/* Header Section */}
-                                        <div className="text-center mb-4">
-                                            <div className="inline-flex bg-yellow-500 rounded-lg p-3 mb-3">
-                                                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                                </svg>
-                                            </div>
-                                            <h4 className="font-bold text-lg text-gray-900 mb-2">Join Our Revival Partners</h4>
-                                            <p className="text-gray-700 text-sm leading-relaxed">
-                                                Your consistent monthly support fuels ongoing crusades, prayer meetings, and outreaches.
-                                                Partner with us to see nations transformed!
-                                            </p>
-                                        </div>
-
-                                        {/* Benefits List */}
-                                        <ul className="space-y-2.5">
-                                            <li className="flex items-start gap-3 text-gray-700 text-sm">
-                                                <svg className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                                </svg>
-                                                <span>Monthly updates on ministry impact</span>
-                                            </li>
-                                            <li className="flex items-start gap-3 text-gray-700 text-sm">
-                                                <svg className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                                </svg>
-                                                <span>Prayer points and testimonies</span>
-                                            </li>
-                                            <li className="flex items-start gap-3 text-gray-700 text-sm">
-                                                <svg className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                                </svg>
-                                                <span>Personal connection with our team</span>
-                                            </li>
-                                        </ul>
-                                    </div>
-
-                                    <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
-                                        <p className="text-gray-700 mb-4">
-                                            Fill out the form with your details and chosen monthly amount.
-                                            <span className="inline-block bg-yellow-500/20 text-orange-800 px-2 py-0.5 rounded font-semibold ml-1">
-                                                You'll be redirected to Paystack to set up your recurring payment.
-                                            </span>
-                                        </p>
-                                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                                            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                            </svg>
-                                            <span>Secure & flexible - adjust or cancel anytime</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Right Column: Contact Form */}
-                        <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-                            <h3 className="text-2xl font-bold text-gray-900 mb-2">Let Us Connect With You</h3>
-                            <p className="text-gray-600 mb-6">
-                                {donationType === 'one-time'
-                                    ? "Share your details so we can send you a receipt and thank you personally."
-                                    : "Share your details and we'll redirect you to complete your monthly partnership setup."
-                                }
-                            </p>
-
-                            <form onSubmit={handleSubmit} className="space-y-5">
-                                <div>
-                                    <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700 mb-2">Full name *</label>
-                                    <input
-                                        type="text"
-                                        id="fullName"
-                                        name="fullName"
-                                        value={formData.fullName}
-                                        onChange={handleInputChange}
-                                        placeholder="Enter your full name"
-                                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
-                                        required
-                                    />
-                                </div>
-
-                                <div>
-                                    <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Email address *
-                                    </label>
-                                    <input
-                                        type="email"
-                                        id="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleInputChange}
-                                        placeholder="name@example.com"
-                                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
-                                        required
-                                    />
-                                </div>
-
-                                <div>
-                                    <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">Phone / WhatsApp *</label>
-                                    <input
-                                        type="tel"
-                                        id="phone"
-                                        name="phone"
-                                        value={formData.phone}
-                                        onChange={handleInputChange}
-                                        placeholder="+234..."
-                                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
-                                        required
-                                    />
-                                </div>
-
-                                {donationType === 'monthly' && (
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Select Monthly Amount *
-                                        </label>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {amountOptions.map((option) => (
-                                                <div key={option.value} className="flex items-center">
-                                                    <input
-                                                        type="radio"
-                                                        id={`amount-${option.value}`}
-                                                        name="selectedAmount"
-                                                        value={option.value}
-                                                        checked={selectedAmount === option.value}
-                                                        onChange={(e) => setSelectedAmount(e.target.value)}
-                                                        className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300"
-                                                    />
-                                                    <label htmlFor={`amount-${option.value}`} className="ml-2 block text-sm text-gray-700 cursor-pointer">
-                                                        {option.label}
-                                                    </label>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        {selectedAmount === 'custom' && (
-                                            <div className="mt-3">
-                                                <label htmlFor="customAmount" className="sr-only">Custom Amount</label>
-                                                <div className="relative">
-                                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
-                                                    <input
-                                                        type="text"
-                                                        id="customAmount"
-                                                        name="customAmount"
-                                                        value={customAmount}
-                                                        onChange={(e) => setCustomAmount(e.target.value)}
-                                                        placeholder="e.g., 25,000"
-                                                        className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
-                                                        required={selectedAmount === 'custom'}
-                                                        min="1000" // Minimum custom amount
-                                                    />
-                                                </div>
-                                                <p className="text-xs text-gray-500 mt-1">
-                                                    Enter the amount you'd like to give monthly
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-
-                                {donationType === 'one-time' && (
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Amount given (optional)
-                                        </label>
-                                        <div className="relative">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
-                                            <input
-                                                type="text"
-                                                id="amount"
-                                                name="amount"
-                                                value={formData.amount}
-                                                onChange={handleInputChange}
-                                                placeholder={'e.g., 50,000'}
-                                                className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
-                                            />
-                                        </div>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            Helps us track and acknowledge your gift
-                                        </p>
-                                    </div>
-                                )}
-
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Prayer request (optional)
-                                    </label>
-                                    <textarea
-                                        id="prayerRequest"
-                                        name="prayerRequest"
-                                        value={formData.prayerRequest}
-                                        onChange={handleInputChange}
-                                        placeholder="Share how we can pray for you"
-                                        rows="4"
-                                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none resize-none"
-                                    ></textarea>
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={isSubmitting || (donationType === 'monthly' && selectedAmount === 'custom' && !customAmount)}
-                                >
-                                    {isSubmitting
-                                        ? (donationType === 'monthly' ? 'Redirecting...' : 'Submitting...')
-                                        : (donationType === 'monthly' ? 'Continue to Payment Setup →' : 'Submit Details')
-                                    }
-                                </button>
-
-                                <p className="text-xs text-gray-500 text-center">
-                                    {donationType === 'one-time'
-                                        ? "We'll send you a receipt and thank you message within 24 hours."
-                                        : "You'll be redirected to Paystack to complete your secure recurring payment setup."
-                                    }
+                                <p className="text-sm text-gray-500 mt-6">
+                                    By clicking a link, you'll be taken to Paystack to set up a secure, recurring monthly donation. You can manage or cancel it anytime.
                                 </p>
-                            </form>
-                        </div>
-
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>

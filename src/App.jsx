@@ -6,6 +6,7 @@ import DonationSection from './components/DonationSection';
 import ImpactSection from './components/ImpactSection';
 import Footer from './components/Footer';
 import AdminDashboard from './components/admindashboard.jsx';
+import DonationSuccess from './components/DonationSuccess.jsx';
 
 const MainLayout = () => (
     <div className="bg-white">
@@ -24,6 +25,7 @@ export default function App() {
         <Routes>
             <Route path="/" element={<MainLayout />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/donation-successful" element={<DonationSuccess />} />
         </Routes>
     );
 }
