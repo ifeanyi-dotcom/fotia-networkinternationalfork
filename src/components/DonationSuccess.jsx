@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Toast from './Toast';
-import Header from './Header'; // Import Header
-import Footer from './Footer'; // Import Footer
+import Header from './Header';
+import Footer from './Footer';
 
 const DonationSuccess = () => {
     const [searchParams] = useSearchParams();
@@ -10,6 +10,7 @@ const DonationSuccess = () => {
         fullName: '',
         email: '',
         phone: '',
+        amount: '',
         prayerRequest: ''
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,17 +18,22 @@ const DonationSuccess = () => {
 
     // Extract payment details from URL
     const paymentReference = searchParams.get('reference') || searchParams.get('trxref');
-    const amount = searchParams.get('amount'); // This will be in the smallest unit (kobo)
-    const donationType = searchParams.get('type') || (window.location.pathname.includes('monthly') ? 'monthly' : 'one-time'); // Infer type
+    const urlAmount = searchParams.get('amount'); // This will be in the smallest unit (kobo)
+    const donationType = searchParams.get('type') || (window.location.pathname.includes('monthly') ? 'monthly' : 'one-time');
 
     useEffect(() => {
+        // Pre-fill amount if it came from URL (convert from kobo to naira)
+        if (urlAmount) {
+            const amountInNaira = (parseInt(urlAmount, 10) / 100).toString();
+            setFormData(prev => ({ ...prev, amount: amountInNaira }));
+        }
+
         if (!paymentReference) {
             showToast('info', 'Welcome! Please fill in your details to complete your registration.');
         } else {
             showToast('success', 'Payment successful! Please complete your registration below.');
         }
-    }, [paymentReference]);
-
+    }, [paymentReference, urlAmount]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -42,15 +48,11 @@ const DonationSuccess = () => {
         e.preventDefault();
         setIsSubmitting(true);
 
-        // Convert amount from kobo to major unit if available
-        const amountInMajorUnit = amount ? (parseInt(amount, 10) / 100).toString() : 'N/A';
-
         try {
             const payload = {
                 ...formData,
-                amount: amountInMajorUnit,
                 donationType,
-                paymentReference,
+                paymentReference: paymentReference || null,
                 status: donationType === 'monthly' ? 'active' : 'completed'
             };
 
@@ -65,8 +67,7 @@ const DonationSuccess = () => {
             if (data.success) {
                 showToast('success', 'Thank you! Your details have been saved.');
                 // Clear form
-                setFormData({ fullName: '', email: '', phone: '', prayerRequest: '' });
-                // You could redirect them to a final thank you page or disable the form
+                setFormData({ fullName: '', email: '', phone: '', amount: '', prayerRequest: '' });
             } else {
                 showToast('error', data.message || 'Submission failed. Please try again.');
             }
@@ -89,7 +90,7 @@ const DonationSuccess = () => {
                 <Header />
                 <main className="flex-grow flex items-center justify-center py-12 px-4">
                     <div className="max-w-xl w-full mx-auto">
-                        <div className=" p-4 md:p-4 ">
+                        <div className="p-4 md:p-4">
                             <div className="text-center mb-8">
                                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
                                     {paymentReference ? 'Thank You for Your Gift!' : 'Register Your Details'}
@@ -97,14 +98,16 @@ const DonationSuccess = () => {
                                 <p className="text-gray-600">
                                     {paymentReference
                                         ? "Your payment was successful. Please fill out the form below so we can personally thank you and keep you updated."
-                                        : "If you gave via Bank Transfer or another method, Please fill out the form below so we can personally thank you and keep you updated."
+                                        : "If you gave via Bank Transfer or another method, please fill out the form below so we can personally thank you and keep you updated."
                                     }
                                 </p>
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-5">
                                 <div>
-                                    <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700 mb-2">Full name *</label>
+                                    <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Full name *
+                                    </label>
                                     <input
                                         type="text"
                                         id="fullName"
@@ -116,8 +119,11 @@ const DonationSuccess = () => {
                                         required
                                     />
                                 </div>
+
                                 <div>
-                                    <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">Email address *</label>
+                                    <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Email address *
+                                    </label>
                                     <input
                                         type="email"
                                         id="email"
@@ -129,8 +135,11 @@ const DonationSuccess = () => {
                                         required
                                     />
                                 </div>
+
                                 <div>
-                                    <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">Phone / WhatsApp *</label>
+                                    <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Phone / WhatsApp *
+                                    </label>
                                     <input
                                         type="tel"
                                         id="phone"
@@ -142,8 +151,34 @@ const DonationSuccess = () => {
                                         required
                                     />
                                 </div>
+
+                                {/* Amount Field - Required for All */}
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Prayer request (optional)</label>
+                                    <label htmlFor="amount" className="block text-sm font-semibold text-gray-700 mb-2">
+                                        {donationType === 'monthly' ? 'Monthly commitment amount *' : 'Amount given *'}
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
+                                        <input
+                                            type="text"
+                                            id="amount"
+                                            name="amount"
+                                            value={formData.amount}
+                                            onChange={handleInputChange}
+                                            placeholder={donationType === 'monthly' ? 'e.g., 10,000' : 'e.g., 50,000'}
+                                            className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none"
+                                            required
+                                        />
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Helps us track and acknowledge your gift
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="prayerRequest" className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Prayer request (optional)
+                                    </label>
                                     <textarea
                                         id="prayerRequest"
                                         name="prayerRequest"
@@ -154,6 +189,7 @@ const DonationSuccess = () => {
                                         className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none resize-none"
                                     ></textarea>
                                 </div>
+
                                 <button
                                     type="submit"
                                     className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
@@ -161,8 +197,12 @@ const DonationSuccess = () => {
                                 >
                                     {isSubmitting ? 'Submitting...' : 'Complete Registration'}
                                 </button>
+
                                 <p className="text-xs text-gray-500 text-center">
-                                    By submitting, you agree to receive communications from Fotia Network International.
+                                    {donationType === 'one-time'
+                                        ? "We'll send you a receipt and thank you message within 24 hours."
+                                        : "Our team will contact you within 24 hours to finalize your partnership."
+                                    }
                                 </p>
                             </form>
                         </div>
