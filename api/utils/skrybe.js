@@ -12,7 +12,7 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
 
   const templates = {
     onetime_thankyou: {
-      subject: 'Thank You for Your Gift to Fotiá Network! 🔥',
+      subject: 'Thank You, ${data.name}! Your gift is making an impact 🔥',
       body: `
         <!DOCTYPE html>
         <html>
@@ -21,7 +21,6 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
             .container { max-width: 600px; margin: 0 auto; background: #fff; }
-            .header { background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); padding: 30px; text-align: center; }
             .logo { max-width: 120px; margin-bottom: 15px; }
             .header h1 { color: #fff; font-size: 24px; margin: 0; }
             .content { padding: 30px; }
@@ -34,29 +33,23 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
         <body>
           <div class="container">
             <div class="header">
-              <h1>Fotiá Network International</h1>
+              <img src="https://partner.fotianetwork.org/assets/logo.PNG" alt="Fotia Network" class="logo" style="display:block; margin: 0 auto; max-width: 120px;">
             </div>
             <div class="content">
               <p>Dear ${data.name},</p>
-              <p>Thank you so much for your generous one-time gift of <strong>${amountDisplay}</strong> to Fotiá Network!</p>
-              <p>Your support helps us continue our mission and impact lives. Every contribution, no matter the size, makes a real difference in spreading the Gospel and touching hearts.</p>
+              <p>Thank you so much for your generous gift of <strong>${amountDisplay}</strong> to Fotiá Network to fuel prayer, evangelism, and revival gatherings across the nations.!</p>
+              <p>Your partnership means the world to us, and we're honored that you've chosen to invest in the work God is doing through Fotia. Because of you, we're able to reach more people with the Gospel.</p>
 
-              <div class="amount-box">
-                <strong>Your Gift: ${amountDisplay}</strong><br>
-                Thank you for believing in our cause!
-              </div>
-
-              <h3>Become a Monthly Partner</h3>
+              <h3>Would you consider partnering with us monthly?</h3>
               <p>Would you like to make an even greater impact? Consider joining our community of monthly partners who are consistently fueling the fire of ministry.</p>
               <a href="https://paystack.shop/pay/fotiamonthly" class="cta-button">Become a Monthly Partner →</a>
 
               <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-              <p>May God bless you abundantly for your faithfulness and generosity!</p>
-              <p>With gratitude,<br><strong>The Fotiá Network Team</strong></p>
+              <p>We're praying for you and grateful for your heart for the Kingdom.</p>
+              <p>With love,<br>Evang. Emeka Ezera,<br><strong>Fotia Network</strong></p>
             </div>
             <div class="footer">
               <p>© 2026 Fotiá Network International. All rights reserved.</p>
-              <p>Fotiá Network | Spreading the Gospel, Touching Hearts</p>
             </div>
           </div>
         </body>
@@ -64,7 +57,7 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
       `
     },
     monthly_welcome: {
-      subject: 'Welcome to the Fotiá Network Partner Family! 🎉',
+      subject: 'Thank you for partnering monthly,${data.name}',
       body: `
         <!DOCTYPE html>
         <html>
@@ -163,7 +156,7 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
         throw new Error(`Skrybe API error: ${responseText}`);
     }
     return jsonData;
-  } catch (e) {
+  } catch {
       // If parsing fails and it wasn't a success message, throw error
       if (!responseText.toLowerCase().includes('success')){
           throw new Error(`Skrybe API error: ${responseText}`);
