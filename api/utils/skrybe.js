@@ -24,7 +24,6 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
             .container { max-width: 600px; margin: 0 auto; background: #fff; }
-            .logo { max-width: 120px; margin-bottom: 15px; }
             .header { background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); padding: 30px; text-align: center; }
             .header h1 { color: #fff; font-size: 24px; margin: 0; }
             .content { padding: 30px; }
@@ -32,12 +31,12 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
             .amount-box strong { font-size: 18px; color: #ff6b35; }
             .cta-button { display: inline-block; background: #ff6b35; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 15px; }
             .footer { background: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; }
+            .logo-footer { max-width: 120px; margin: 15px auto 10px; display: block; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <img src="https://partner.fotianetwork.org/assets/logo-Dz0vDe8J.PNG" alt="Fotia Network" class="logo" style="display:block; margin: 0 auto; max-width: 120px;">
               <h1>Fotiá Network International</h1>
             </div>
             <div class="content">
@@ -52,6 +51,7 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
               <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
               <p>We're praying for you and grateful for your heart for the Kingdom.</p>
               <p>With love,<br>Evang. Emeka Ezera,<br><strong>Fotia Network</strong></p>
+              <img src="https://partner.fotianetwork.org/logo.png" alt="Fotia Network Logo" class="logo-footer">
             </div>
             <div class="footer">
               <p>© 2026 Fotiá Network International. All rights reserved.</p>
@@ -72,17 +72,16 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
             .container { max-width: 600px; margin: 0 auto; background: #fff; }
             .header { background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); padding: 30px; text-align: center; }
-            .logo { max-width: 120px; margin-bottom: 15px; }
             .header h1 { color: #fff; font-size: 24px; margin: 0; }
             .content { padding: 30px; }
             .cta-button { display: inline-block; background: #ff6b35; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 15px; }
             .footer { background: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; }
+            .logo-footer { max-width: 120px; margin: 15px auto 10px; display: block; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <img src="https://partner.fotianetwork.org/assets/logo-Dz0vDe8J.PNG" alt="Fotia Network" class="logo" style="display:block; margin: 0 auto; max-width: 120px;">
               <h1>Fotiá Network International</h1>
             </div>
             <div class="content">
@@ -100,6 +99,7 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
 
               <p>Thank you for saying "yes" to this journey with us. We're honored to have you on our team.</p>
               <p>With love,<br>Evang. Emeka Ezera,<br><strong>Fotia Network</strong></p>
+              <img src="https://partner.fotianetwork.org/logo.png" alt="Fotia Network Logo" class="logo-footer">
             </div>
             <div class="footer">
               <p>© 2026 Fotiá Network International. All rights reserved.</p>
