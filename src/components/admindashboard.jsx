@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
-import {Users, DollarSign, TrendingUp, Calendar, Mail, RefreshCw, Check, X, Clock, Download, Table, LayoutGrid, Filter, Search, ChevronDown} from 'lucide-react';
+import {Users, DollarSign, TrendingUp, Calendar, Mail, RefreshCw, Check, X, Clock, Download, Table, LayoutGrid, Filter, Search, ChevronDown, Lock} from 'lucide-react';
+import Toast from './Toast';
 
 const AdminDashboard = () => {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [password, setPassword] = useState('');
+    const [passwordError, setPasswordError] = useState('');
     const [donations, setDonations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState('card');
@@ -10,10 +14,26 @@ const AdminDashboard = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [resendingId, setResendingId] = useState(null);
     const [showFilters, setShowFilters] = useState(false);
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+    const handlePasswordSubmit = (e) => {
+        e.preventDefault();
+        if (password === 'fotia2024') {
+            setIsAuthenticated(true);
+            setPasswordError('');
+            setPassword('');
+            fetchDonations();
+        } else {
+            setPasswordError('Incorrect password');
+            setPassword('');
+        }
+    };
 
     useEffect(() => {
-        fetchDonations();
-    }, []);
+        if (isAuthenticated) {
+            fetchDonations();
+        }
+    }, [isAuthenticated]);
 
     const fetchDonations = async () => {
         try {
@@ -84,6 +104,7 @@ const AdminDashboard = () => {
     const handleResendEmail = async (donationId) => {
         setResendingId(donationId);
         try {
+            const donation = donations.find(d => d._id === donationId);
             const response = await fetch('/api/resend-email', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -98,13 +119,25 @@ const AdminDashboard = () => {
                         ? { ...d, emailSent: true, emailSentAt: new Date().toISOString() }
                         : d
                 ));
-                alert('Email sent successfully!');
+                setToast({
+                    show: true,
+                    message: `Email sent to ${donation?.email}`,
+                    type: 'success'
+                });
             } else {
-                alert('Failed to send email: ' + result.error);
+                setToast({
+                    show: true,
+                    message: 'Failed to send email',
+                    type: 'error'
+                });
             }
         } catch (error) {
             console.error('Error resending email:', error);
-            alert('Error resending email');
+            setToast({
+                show: true,
+                message: 'Error resending email',
+                type: 'error'
+            });
         } finally {
             setResendingId(null);
         }
@@ -176,6 +209,55 @@ const AdminDashboard = () => {
         </span>
     );
 
+    if (!isAuthenticated) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    isVisible={toast.show}
+                    onClose={() => setToast({ ...toast, show: false })}
+                />
+                <div className="w-full max-w-md">
+                    <div className="bg-white rounded-xl shadow-2xl p-8">
+                        <div className="flex justify-center mb-6">
+                            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
+                                <Lock className="text-orange-600" size={32} />
+                            </div>
+                        </div>
+                        <h1 className="text-2xl font-bold text-center text-gray-900 mb-2">Admin Access</h1>
+                        <p className="text-center text-gray-500 mb-8">Enter password to access dashboard</p>
+
+                        <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                            <div>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => {
+                                        setPassword(e.target.value);
+                                        setPasswordError('');
+                                    }}
+                                    placeholder="Enter admin password"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                    autoFocus
+                                />
+                                {passwordError && (
+                                    <p className="text-red-500 text-sm mt-2">{passwordError}</p>
+                                )}
+                            </div>
+                            <button
+                                type="submit"
+                                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg transition-colors"
+                            >
+                                Unlock Dashboard
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -188,7 +270,22 @@ const AdminDashboard = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+            <Toast
+                message={toast.message}
+                type={toast.type}
+                isVisible={toast.show}
+                onClose={() => setToast({ ...toast, show: false })}
+            />
+            <header className="bg-white border-b border-gray-200 py-4 sticky top-0 z-10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <img src="/src/assets/fotia_logo.jpg" alt="Fotiá Network" className="h-10 w-auto" />
+                        <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+                    </div>
+                </div>
+            </header>
+            <div className="flex-grow">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                 {/* Header */}
                 <div className="mb-6 sm:mb-8">
@@ -483,6 +580,12 @@ const AdminDashboard = () => {
                     </div>
                 )}
             </div>
+            </div>
+            <footer className="bg-gray-900 text-gray-400 py-6 mt-12 border-t border-gray-800">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <p className="text-sm">© 2026 Fotiá Network International. All rights reserved.</p>
+                </div>
+            </footer>
         </div>
     );
 };
