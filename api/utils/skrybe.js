@@ -8,9 +8,9 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
         throw new Error('SKRYBE_API_KEY environment variable is not set.');
     }
 
-    // Format amount display - handle both numeric and N/A values
+    // Format amount display - handle both numeric and N/A values, strip commas first
     const amountDisplay = data.amount && data.amount !== 'N/A'
-        ? `₦${parseFloat(data.amount).toLocaleString()}`
+        ? `₦${parseFloat(data.amount.toString().replace(/,/g, '')).toLocaleString()}`
         : 'your generous gift';
 
     const templates = {
