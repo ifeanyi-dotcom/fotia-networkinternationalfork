@@ -62,13 +62,18 @@ export default async function handler(req, res) {
         try {
             const isMonthly = donationType === 'monthly';
             const templateType = isMonthly ? 'monthly_welcome' : 'onetime_thankyou';
-            
+
+            // Parse amount properly - remove commas and convert to number
+            const cleanAmount = amount && amount !== 'N/A'
+                ? parseInt(amount.toString().replace(/,/g, ''), 10)
+                : undefined;
+
             const emailResponse = await sendSkrybeEmail({
                 to: email,
                 templateType: templateType,
                 data: {
                     name: fullName.split(' ')[0], // First name
-                    amount: donationRecord.amount !== 'N/A' ? parseFloat(donationRecord.amount).toLocaleString() : undefined,
+                    amount: cleanAmount,
                 }
             });
 
