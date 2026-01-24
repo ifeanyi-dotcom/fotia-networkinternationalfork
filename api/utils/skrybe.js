@@ -35,10 +35,7 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
           </style>
         </head>
         <body>
-          <div class="container">
-            <div class="header">
-              <h1>Fotiá Network International</h1>
-            </div>
+            <img src="https://partner.fotianetwork.org/logo.png" alt="Fotia Network Logo" class="logo-footer">
             <div class="content">
               <p>Dear ${data.name},</p>
               <p>Thank you so much for your generous gift of <strong>${amountDisplay}</strong> to Fotiá Network to fuel prayer, evangelism, and revival gatherings across the nations!</p>
@@ -51,7 +48,6 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
               <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
               <p>We're praying for you and grateful for your heart for the Kingdom.</p>
               <p>With love,<br>Evang. Emeka Ezera,<br><strong>Fotia Network</strong></p>
-              <img src="https://partner.fotianetwork.org/logo.png" alt="Fotia Network Logo" class="logo-footer">
             </div>
             <div class="footer">
               <p>© 2026 Fotiá Network International. All rights reserved.</p>
@@ -70,7 +66,6 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
           <meta charset="utf-8">
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-            .container { max-width: 600px; margin: 0 auto; background: #fff; }
             .header { background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); padding: 30px; text-align: center; }
             .header h1 { color: #fff; font-size: 24px; margin: 0; }
             .content { padding: 30px; }
@@ -80,10 +75,7 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
           </style>
         </head>
         <body>
-          <div class="container">
-            <div class="header">
-              <h1>Fotiá Network International</h1>
-            </div>
+            <img src="https://partner.fotianetwork.org/logo.png" alt="Fotia Network Logo" class="logo-footer">
             <div class="content">
               <p>Dear ${data.name},</p>
               <p>We are so excited that you've committed to partnering with us monthly with your gift of <strong>${amountDisplay}/month</strong> toward Fotia Network to fuel prayer, evangelism, and revival gatherings across the nations. Your faithfulness enables us to reach more people with the Gospel.</p>
@@ -99,7 +91,7 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
 
               <p>Thank you for saying "yes" to this journey with us. We're honored to have you on our team.</p>
               <p>With love,<br>Evang. Emeka Ezera,<br><strong>Fotia Network</strong></p>
-              <img src="https://partner.fotianetwork.org/logo.png" alt="Fotia Network Logo" class="logo-footer">
+             
             </div>
             <div class="footer">
               <p>© 2026 Fotiá Network International. All rights reserved.</p>
