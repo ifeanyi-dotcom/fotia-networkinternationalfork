@@ -18,7 +18,8 @@ const AdminDashboard = () => {
 
     const handlePasswordSubmit = (e) => {
         e.preventDefault();
-        if (password === 'fotia2024') {
+        const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+        if (password === correctPassword) {
             setIsAuthenticated(true);
             setPasswordError('');
             setPassword('');
@@ -38,7 +39,7 @@ const AdminDashboard = () => {
     const fetchDonations = async () => {
         try {
             const username = 'admin';
-            const password = 'fotia2024';
+            const password = import.meta.env.VITE_ADMIN_PASSWORD;
             const credentials = btoa(`${username}:${password}`);
 
             const response = await fetch('/api/get-donations', {

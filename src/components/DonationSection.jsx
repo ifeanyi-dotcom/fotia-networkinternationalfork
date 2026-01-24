@@ -22,8 +22,10 @@ const DonationSection = () => {
     const [copiedBank, setCopiedBank] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
+    const bankAccountNumber = import.meta.env.VITE_BANK_ACCOUNT_NUMBER || '1834897295';
+
     const copyBankDetails = () => {
-        navigator.clipboard.writeText('1834897295');
+        navigator.clipboard.writeText(bankAccountNumber);
         setCopiedBank(true);
         setTimeout(() => setCopiedBank(false), 2000);
     };
@@ -159,7 +161,7 @@ const DonationSection = () => {
                                         <div className="bg-white p-3 rounded-lg border border-gray-300 flex justify-between items-center">
                                             <div>
                                                 <p className="text-xs text-gray-600">Account Number:</p>
-                                                <p className="font-bold text-gray-900 font-mono text-base">1834897295</p>
+                                                <p className="font-bold text-gray-900 font-mono text-base">{bankAccountNumber}</p>
                                             </div>
                                             <button
                                                 onClick={copyBankDetails}
