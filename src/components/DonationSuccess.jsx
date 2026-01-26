@@ -21,11 +21,23 @@ const DonationSuccess = () => {
     const urlAmount = searchParams.get('amount'); // This will be in the smallest unit (kobo)
     const donationType = searchParams.get('type') || (window.location.pathname.includes('monthly') ? 'monthly' : 'one-time');
 
+    // Helper function to sanitize amount (remove all non-numeric characters)
+    const sanitizeAmount = (value) => {
+        return value.replace(/[^\d]/g, '');
+    };
+
+    // Helper function to format amount with commas
+    const formatAmount = (value) => {
+        const cleaned = sanitizeAmount(value);
+        if (!cleaned) return '';
+        return cleaned.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    };
+
     useEffect(() => {
         // Pre-fill amount if it came from URL (convert from kobo to naira)
         if (urlAmount) {
             const amountInNaira = (parseInt(urlAmount, 10) / 100).toString();
-            setFormData(prev => ({ ...prev, amount: amountInNaira }));
+            setFormData(prev => ({ ...prev, amount: formatAmount(amountInNaira) }));
         }
 
         if (!paymentReference) {
@@ -37,7 +49,14 @@ const DonationSuccess = () => {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+
+        if (name === 'amount') {
+            // Sanitize and format the amount as they type
+            const formatted = formatAmount(value);
+            setFormData(prev => ({ ...prev, amount: formatted }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const showToast = (type, message) => {
@@ -161,6 +180,8 @@ const DonationSuccess = () => {
                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
                                         <input
                                             type="text"
+                                            inputMode="numeric"
+                                            pattern="[0-9,]*"
                                             id="amount"
                                             name="amount"
                                             value={formData.amount}

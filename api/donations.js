@@ -1,6 +1,14 @@
 import clientPromise from './utils/db.js';
 import { sendSkrybeEmail } from './utils/skrybe.js';
-import { ObjectId } from 'mongodb'; // Import ObjectId for database operations
+import { ObjectId } from 'mongodb';
+
+// Helper function to sanitize amount input
+const sanitizeAmount = (amount) => {
+    if (!amount || amount === 'N/A') return 'N/A';
+    // Remove all non-numeric characters (₦, #, N, commas, spaces, etc.)
+    const cleaned = amount.toString().replace(/[^\d]/g, '');
+    return cleaned || 'N/A';
+};
 
 export default async function handler(req, res) {
     // Set CORS headers
@@ -22,10 +30,10 @@ export default async function handler(req, res) {
             email,
             phone,
             prayerRequest,
-            amount, // This is now a string like "5000" or "N/A"
-            donationType, // 'one-time' or 'monthly'
-            paymentReference, // Can be null if it's a bank transfer
-            status // 'completed' or 'active'
+            amount,
+            donationType,
+            paymentReference,
+            status
         } = req.body;
 
         // Validate required fields
@@ -37,17 +45,20 @@ export default async function handler(req, res) {
         const db = client.db('Fotia_db');
         const donationsCollection = db.collection('donations');
 
+        // Sanitize the amount before storing
+        const sanitizedAmount = sanitizeAmount(amount);
+
         const donationRecord = {
             fullName,
             email,
             phone,
             prayerRequest: prayerRequest || '',
-            amount: amount || 'N/A',
+            amount: sanitizedAmount,
             donationType: donationType || 'one-time',
             status: status || 'completed',
             paymentReference: paymentReference || null,
             createdAt: new Date(),
-            paymentVerifiedAt: paymentReference ? new Date() : null, // Mark as verified if we have a ref
+            paymentVerifiedAt: paymentReference ? new Date() : null,
             ipAddress: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '',
             emailError: null,
             emailId: null,
@@ -63,9 +74,9 @@ export default async function handler(req, res) {
             const isMonthly = donationType === 'monthly';
             const templateType = isMonthly ? 'monthly_welcome' : 'onetime_thankyou';
 
-            // Parse amount properly - remove commas and convert to number
-            const cleanAmount = amount && amount !== 'N/A'
-                ? parseInt(amount.toString().replace(/,/g, ''), 10)
+            // Parse amount properly - it's already sanitized
+            const cleanAmount = sanitizedAmount !== 'N/A'
+                ? parseInt(sanitizedAmount, 10)
                 : undefined;
 
             const emailResponse = await sendSkrybeEmail({
@@ -79,11 +90,11 @@ export default async function handler(req, res) {
 
             await donationsCollection.updateOne(
                 { _id: donationId },
-                { $set: { 
-                    welcomeEmailSent: true, 
-                    welcomeEmailSentAt: new Date(),
-                    emailId: emailResponse.id || null
-                }}
+                { $set: {
+                        welcomeEmailSent: true,
+                        welcomeEmailSentAt: new Date(),
+                        emailId: emailResponse.id || null
+                    }}
             );
             console.log(`Successfully sent ${templateType} email for donation ${donationId}`);
 
