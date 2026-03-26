@@ -82,10 +82,10 @@ const Footer = () => {
                                 <i className="fa-brands fa-tiktok text-white text-lg"></i>
                             </a>
                         </div>
-                        <p className="text-sm mt-8 text-gray-300">
-                            Built by
+                        <p className="text-sm mt-8 text-gray-400">
+                            Designed and developed by
                             <a href="https://successdanesy.vercel.app" className="text-blue-500 hover:underline">
-                                {" "}&lt; Success Danesy /&gt;
+                                {" "}&lt;Success Danesy/&gt;
                             </a>
                         </p>
                     </div>
