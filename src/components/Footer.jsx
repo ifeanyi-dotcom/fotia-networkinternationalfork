@@ -84,7 +84,7 @@ const Footer = () => {
                         </div>
                         <p className="text-sm mt-8 text-gray-400">
                             Designed and developed by
-                            <a href="https://successdanesy.vercel.app" className="text-gray-400 hover:underline text-white">
+                            <a href="https://successdanesy.vercel.app" className="text-gray-400 hover:underline hover:text-white">
                                 {" "}&lt;Success Danesy/&gt;
                             </a>
                         </p>
