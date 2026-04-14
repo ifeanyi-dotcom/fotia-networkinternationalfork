@@ -126,6 +126,7 @@ export default async function handler(req, res) {
         formData.append('first_timer', first_timer ? 'true' : 'false');
         formData.append('gdpr', 'true');
         formData.append('boolean', 'true');
+        formData.append('silent', 'true');
 
         let skrybeResponse = null;
         let skrybeSuccess = false;
@@ -201,9 +202,25 @@ export default async function handler(req, res) {
 
         const result = await burnCollection.insertOne(subscriberRecord);
 
+        // Send custom branded welcome email via Skrybe Transactional API
+        try {
+            const { sendSkrybeEmail } = await import('./utils/skrybe.js');
+            await sendSkrybeEmail({
+                to: sanitizedEmail,
+                templateType: 'burn_welcome',
+                data: {
+                    name: fullName,
+                    city: city
+                }
+            });
+        } catch (emailError) {
+            console.error('Error sending welcome email:', emailError);
+            // We don't return error here because the registration was successful
+        }
+
         return res.status(201).json({
             success: true,
-            message: 'Check your email to confirm your registration for BURN',
+            message: 'Your registration for BURN was successful! Check your email for details.',
             subscriberId: result.insertedId
         });
 

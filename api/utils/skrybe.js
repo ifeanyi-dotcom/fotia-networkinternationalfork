@@ -4,19 +4,19 @@ const SKRYBE_API_KEY = process.env.SKRYBE_API_KEY;
 const SKRYBE_API_URL = 'https://dashboard.skry.be/api/emails/send-transactional.php';
 
 export async function sendSkrybeEmail({ to, templateType, data }) {
-    if (!SKRYBE_API_KEY) {
-        throw new Error('SKRYBE_API_KEY environment variable is not set.');
-    }
+  if (!SKRYBE_API_KEY) {
+    throw new Error('SKRYBE_API_KEY environment variable is not set.');
+  }
 
-    // Format amount display - amount should already be a clean number from donations.js
-    const amountDisplay = data.amount && typeof data.amount === 'number'
-        ? `₦${data.amount.toLocaleString()}`
-        : 'your generous gift';
+  // Format amount display - amount should already be a clean number from donations.js
+  const amountDisplay = data.amount && typeof data.amount === 'number'
+    ? `₦${data.amount.toLocaleString()}`
+    : 'your generous gift';
 
-    const templates = {
-        onetime_thankyou: {
-            subject: `Thank You, ${data.name}! Your gift is making an impact 🔥`,
-            body: `
+  const templates = {
+    onetime_thankyou: {
+      subject: `Thank You, ${data.name}! Your gift is making an impact 🔥`,
+      body: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -51,15 +51,16 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
             </div>
             <div class="footer">
               <p>© 2026 Fotiá Network International. All rights reserved.</p>
+              <p>Fueling prayer, evangelism, and revival gatherings across the nations.</p>
             </div>
           </div>
         </body>
         </html>
       `
-        },
-        monthly_welcome: {
-            subject: `Thank you for partnering monthly, ${data.name}`,
-            body: `
+    },
+    monthly_welcome: {
+      subject: `Thank you for partnering monthly, ${data.name}`,
+      body: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -95,61 +96,101 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
             </div>
             <div class="footer">
               <p>© 2026 Fotiá Network International. All rights reserved.</p>
+              <p>Fueling prayer, evangelism, and revival gatherings across the nations.</p>
             </div>
           </div>
         </body>
         </html>
       `
-        }
-    };
+    },
+    burn_welcome: {
+      subject: `Welcome to BURN, ${data.name}! 🔥`,
+      body: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 0 auto; background: #fff; }
+            .content { padding: 30px; }
+            .cta-button { display: inline-block; background: #ff6b35; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 15px; }
+            .footer { background: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; }
+            .logo-header { max-width: 120px; margin: 15px auto 10px; display: block; }
+          </style>
+        </head>
+        <body>
+            <img src="https://partner.fotianetwork.org/logo.png" alt="Fotia Network Logo" class="logo-header">
+            <div class="content">
+              <p>Dear ${data.name},</p>
+              <p>We are so excited that you prayed with us at <strong>BURN</strong> in <strong>${data.city}</strong>!</p>
+              
+              <p>You have successfully been added to our mailing list. Keep an eye on your inbox for upcoming dates and location details as the fire spreads across the nations.</p>
+              
+              <p>If you'd ever like to stop receiving these updates, you can click the button below to opt out at any time.</p>
+              
+              <a href="[unsubscribe]" class="cta-button">Opt out of emails</a>
 
-    const template = templates[templateType];
-
-    if (!template) {
-        throw new Error(`Unknown email template type: ${templateType}`);
+              <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+              <p>With love,<br>Evang. Emeka Ezera,<br><strong>Fotia Network</strong></p>
+            </div>
+                        <div class="footer">
+              <p>© 2026 Fotiá Network International. All rights reserved.</p>
+              <p>Fueling prayer, evangelism, and revival gatherings across the nations.</p>
+            </div>
+        </body>
+        </html>
+      `
     }
+  };
 
-    const payload = {
-        api_key: SKRYBE_API_KEY,
-        to_email: to,
-        from_name: 'Fotiá Network',
-        from_email: 'noreply@fotianetwork.org',
-        reply_to: 'fotianetwork@gmail.com',
-        subject: template.subject,
-        html_body: template.body,
-        is_html: true
-    };
+  const template = templates[templateType];
 
-    const response = await fetch(SKRYBE_API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-    });
+  if (!template) {
+    throw new Error(`Unknown email template type: ${templateType}`);
+  }
 
-    const responseText = await response.text();
+  const payload = {
+    api_key: SKRYBE_API_KEY,
+    to_email: to,
+    from_name: 'Fotiá Network',
+    from_email: 'noreply@fotianetwork.org',
+    reply_to: 'fotianetwork@gmail.com',
+    subject: template.subject,
+    html_body: template.body,
+    is_html: true
+  };
 
-    if (!response.ok) {
-        throw new Error(`Skrybe API error: ${responseText}`);
+  const response = await fetch(SKRYBE_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const responseText = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`Skrybe API error: ${responseText}`);
+  }
+
+  try {
+    // Skrybe can return plain text "Success" or a JSON error
+    if (responseText.toLowerCase().includes('success')) {
+      return { status: 'success', message: responseText };
     }
-
-    try {
-        // Skrybe can return plain text "Success" or a JSON error
-        if (responseText.toLowerCase().includes('success')) {
-            return { status: 'success', message: responseText };
-        }
-        const jsonData = JSON.parse(responseText);
-        if(jsonData.status !== 'success'){
-            throw new Error(`Skrybe API error: ${responseText}`);
-        }
-        return jsonData;
-    } catch {
-        // If parsing fails and it wasn't a success message, throw error
-        if (!responseText.toLowerCase().includes('success')){
-            throw new Error(`Skrybe API error: ${responseText}`);
-        }
-        // if it was a success message but not json, just return it
-        return { status: 'success', message: responseText };
+    const jsonData = JSON.parse(responseText);
+    if (jsonData.status !== 'success') {
+      throw new Error(`Skrybe API error: ${responseText}`);
     }
+    return jsonData;
+  } catch {
+    // If parsing fails and it wasn't a success message, throw error
+    if (!responseText.toLowerCase().includes('success')) {
+      throw new Error(`Skrybe API error: ${responseText}`);
+    }
+    // if it was a success message but not json, just return it
+    return { status: 'success', message: responseText };
+  }
 }
