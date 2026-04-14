@@ -29,7 +29,7 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
             .content { padding: 30px; }
             .amount-box { background: #fff3cd; border-left: 4px solid #ff6b35; padding: 15px; margin: 20px 0; }
             .amount-box strong { font-size: 18px; color: #ff6b35; }
-            .cta-button { display: inline-block; background: #ff6b35; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 15px; }
+            .cta-button { display: inline-block; background: #ff6b35; color: #fff !important; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 15px; }
             .footer { background: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; }
             .logo-footer { max-width: 120px; margin: 15px auto 10px; display: block; }
           </style>
@@ -68,9 +68,9 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
             .header { background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); padding: 30px; text-align: center; }
-            .header h1 { color: #fff; font-size: 24px; margin: 0; }
+            .header h1 { color: #fff !important; font-size: 24px; margin: 0; }
             .content { padding: 30px; }
-            .cta-button { display: inline-block; background: #ff6b35; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 15px; }
+            .cta-button { display: inline-block; background: #ff6b35; color: #fff !important; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 15px; }
             .footer { background: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; }
             .logo-footer { max-width: 120px; margin: 15px auto 10px; display: block; }
           </style>
@@ -114,7 +114,7 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
             .container { max-width: 600px; margin: 0 auto; background: #fff; }
             .content { padding: 30px; }
-            .cta-button { display: inline-block; background: #ff6b35; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 15px; }
+            .cta-button { display: inline-block; background: #ff6b35; color: #fff !important; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 15px; }
             .footer { background: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; }
             .logo-header { max-width: 120px; margin: 15px auto 10px; display: block; }
           </style>
