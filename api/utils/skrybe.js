@@ -129,7 +129,7 @@ export async function sendSkrybeEmail({ to, templateType, data }) {
               
               <p>If you'd ever like to stop receiving these updates, you can click the button below to opt out at any time.</p>
               
-              <a href="[unsubscribe]" class="cta-button">Opt out of emails</a>
+              <a href="https://burn.fotianetwork.org/unsubscribe?email=${to}&list=6DHGp892nK6616b892f4lFcG763A" class="cta-button">Opt out of emails</a>
 
               <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
               <p>With love,<br>Evang. Emeka Ezera,<br><strong>Fotia Network</strong></p>

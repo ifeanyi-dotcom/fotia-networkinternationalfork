@@ -55,13 +55,23 @@ app.post('/api/resend-email', async (req, res) => {
     }
 });
 
-// Test email route
-app.post('/api/test-email', async (req, res) => {
+// Unsubscribe route
+app.post('/api/unsubscribe', async (req, res) => {
     try {
-        const { default: handler } = await import('./api/test-email.js');
+        const { default: handler } = await import('./api/unsubscribe.js');
         await handler(req, res);
     } catch (error) {
-        console.error('Error loading or executing test-email handler:', error);
+        console.error('Error loading or executing unsubscribe handler:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.get('/api/unsubscribe', async (req, res) => {
+    try {
+        const { default: handler } = await import('./api/unsubscribe.js');
+        await handler(req, res);
+    } catch (error) {
+        console.error('Error loading or executing unsubscribe handler:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
