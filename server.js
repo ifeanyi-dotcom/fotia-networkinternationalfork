@@ -33,6 +33,39 @@ app.get('/api/get-donations', async (req, res) => {
     }
 });
 
+// Subscribe BURN route
+app.post('/api/subscribe-burn', async (req, res) => {
+    try {
+        const { default: handler } = await import('./api/subscribe-burn.js');
+        await handler(req, res);
+    } catch (error) {
+        console.error('Error loading or executing subscribe-burn handler:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Resend email route
+app.post('/api/resend-email', async (req, res) => {
+    try {
+        const { default: handler } = await import('./api/resend-email.js');
+        await handler(req, res);
+    } catch (error) {
+        console.error('Error loading or executing resend-email handler:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Test email route
+app.post('/api/test-email', async (req, res) => {
+    try {
+        const { default: handler } = await import('./api/test-email.js');
+        await handler(req, res);
+    } catch (error) {
+        console.error('Error loading or executing test-email handler:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 app.listen(port, () => {
     console.log(`Backend server listening at http://localhost:${port}`);
 });

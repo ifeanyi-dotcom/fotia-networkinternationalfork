@@ -139,7 +139,7 @@ export default async function handler(req, res) {
 
             skrybeResponse = await skrybeRequest.text();
 
-            if (skrybeResponse.toLowerCase().includes('success')) {
+            if (skrybeResponse.toLowerCase().includes('success') || skrybeResponse.trim() === '1') {
                 skrybeSuccess = true;
             } else if (skrybeResponse.toLowerCase().includes('already subscribed')) {
                 skrybeError = 'This email is already registered for BURN';
