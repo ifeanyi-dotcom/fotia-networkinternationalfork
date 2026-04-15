@@ -238,7 +238,10 @@ const BurnRegister = () => {
                             {/* Form Header */}
                             <div className="mb-12 text-center reveal-staggered">
                                 <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Connect Card</h3>
-                                <div className="w-12 h-1 bg-orange-500 mx-auto rounded-full"></div>
+                                <div className="w-12 h-1 bg-orange-500 mx-auto rounded-full mb-4"></div>
+                                <p className="text-gray-500 text-sm md:text-base px-4">
+                                    We would love to keep in touch with you.
+                                </p>
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-10 reveal-staggered">
