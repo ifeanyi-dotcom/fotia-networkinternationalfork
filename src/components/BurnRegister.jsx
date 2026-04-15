@@ -35,9 +35,13 @@ const BurnRegister = () => {
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentSlide((prev) => (prev + 1) % burnImages.length);
-        }, 6000); // 6 second rotations
+        }, 5000); // 5 second rotations to match Hero.jsx
         return () => clearInterval(timer);
     }, []);
+
+    const goToSlide = (index) => {
+        setCurrentSlide(index);
+    };
 
     const validateForm = () => {
         const newErrors = {};
@@ -146,8 +150,8 @@ const BurnRegister = () => {
             <div className="bg-[#fafafa] min-h-screen flex flex-col font-outfit selection:bg-orange-100 selection:text-orange-900">
                 <Header />
 
-                {/* Immersive Hero Section - "The Core" with Carousel */}
-                <div className="bg-gray-950 pt-32 pb-60 px-4 relative overflow-hidden">
+                {/* Immersive Hero Section - Synchronized with Hero.jsx */}
+                <div className="bg-gray-950 pt-20 pb-64 px-4 relative overflow-hidden flex items-center justify-center text-center">
                     {/* Background Image Carousel Layer */}
                     <div className="absolute inset-0 z-0">
                         {burnImages.map((img, index) => (
@@ -164,38 +168,67 @@ const BurnRegister = () => {
                             </div>
                         ))}
 
-                        {/* High-End Fiery Gradient Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-gray-950/90 via-gray-950/60 to-gray-950/90"></div>
-                        <div className="absolute inset-0 bg-gray-950/40"></div>
+                        {/* High-End Fiery Gradient Overlay - Matched to Hero.jsx */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-gray-950/70 via-gray-950/60 to-gray-950/80"></div>
                     </div>
 
-                    {/* Layered Organic Glows - Layered on top of images for unity */}
+                    {/* Layered Organic Glows - Layered on top of images for brand unity */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-orange-600/10 rounded-full blur-[140px] pointer-events-none animate-luminous z-1"></div>
-                    <div className="absolute -top-40 -left-40 w-96 h-96 bg-red-900/10 rounded-full blur-[120px] pointer-events-none z-1"></div>
-                    <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-orange-500/10 rounded-full blur-[120px] pointer-events-none z-1"></div>
 
-                    <div className="max-w-4xl mx-auto text-center relative z-10">
+                    <div className="max-w-4xl mx-auto text-center relative z-10 px-6">
                         <div className="reveal-staggered flex flex-col items-center">
-                            <p className="text-orange-400 font-bold tracking-[0.6em] text-[10px] md:text-xs mb-10 uppercase opacity-80 select-none">
-                                Fotia Network International Presents
-                            </p>
 
-                            <div className="mb-10 group reveal-staggered">
+                            <div className="mb-10 mt-10 group">
                                 <img
                                     src={BurnLogo}
                                     alt="BURN"
-                                    className="w-[280px] md:w-[480px] h-auto drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)] transition-transform duration-700 group-hover:scale-105 select-none"
+                                    className="w-[300px] md:w-[500px] h-auto drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)] transition-transform duration-1000 group-hover:scale-[1.03] select-none"
                                 />
                             </div>
 
-                            <p className="text-orange-200/70 text-lg md:text-2xl max-w-xl mx-auto leading-relaxed font-light italic mb-2 px-4 selection:bg-white/10">
-                                "Fueling prayer, evangelism, and revival gatherings across the nations."
+                            <p className="text-base md:text-2xl max-w-3xl mx-auto leading-relaxed opacity-90 text-white selection:bg-white/20 mb-12">
+                                Fueling prayer, evangelism, and revival gatherings{' '}
+                                <span className="inline-block bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded font-semibold">
+                                    across the nations
+                                </span>
                             </p>
+
+                            {/* Carousel Indicators - Matched to Hero.jsx */}
+                            <div className="flex justify-center space-x-3">
+                                {burnImages.map((_, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => goToSlide(index)}
+                                        className={`transition-all duration-300 rounded-full ${index === currentSlide
+                                            ? 'w-8 h-2 bg-orange-500'
+                                            : 'w-2 h-2 bg-white/50 hover:bg-white/75'
+                                            }`}
+                                        aria-label={`Go to slide ${index + 1}`}
+                                    />
+                                ))}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Subtle Noise/Grain Overlay */}
-                    <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/p6-dark.png')]"></div>
+                    {/* Navigation Arrows - Matched to Hero.jsx */}
+                    <button
+                        onClick={() => goToSlide((currentSlide - 1 + burnImages.length) % burnImages.length)}
+                        className="absolute left-6 top-[40%] -translate-y-1/2 z-20 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white p-4 rounded-full transition-all hidden lg:block border border-white/10"
+                        aria-label="Previous slide"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <button
+                        onClick={() => goToSlide((currentSlide + 1) % burnImages.length)}
+                        className="absolute right-6 top-[40%] -translate-y-1/2 z-20 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white p-4 rounded-full transition-all hidden lg:block border border-white/10"
+                        aria-label="Next slide"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
                 </div>
 
                 {/* Main Registration Content */}

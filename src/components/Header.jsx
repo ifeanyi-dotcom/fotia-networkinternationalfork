@@ -14,7 +14,7 @@ const Header = ({ isAuthenticated, onLogout }) => {
                             <img
                                 src={logo}
                                 alt="FOTIA NETWORK INTERNATIONAL"
-                                className="h-16 w-auto mr-3"
+                                className="h-12 w-auto mr-3"
                             />
                         </Link>
                     </div>
