@@ -115,10 +115,33 @@ export default async function handler(req, res) {
         };
 
         // Construct Dynamic Tags for Skrybe Dashboard Visibility
-        const tagList = ['BURN 2026'];
+        const currentMonth = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(new Date());
+        const eventSession = `${currentMonth} 2026`;
+        const eventTag = `BURN ${eventSession}`;
+        
+        const tagList = [eventTag];
         tagList.push(`City: ${city}`);
         tagList.push(first_timer ? 'Attendee: New' : 'Attendee: Returning');
         const tagString = tagList.join(',');
+
+        // 1. Connect to Database early
+        const client = await clientPromise;
+        const db = client.db('Fotia_db');
+        const burnCollection = db.collection('burn_subscribers');
+
+        // 2. Check for existing registration in the CURRENT month
+        const existingRegistration = await burnCollection.findOne({
+            email: sanitizedEmail,
+            eventSession: eventSession
+        });
+
+        if (existingRegistration) {
+            return res.status(200).json({
+                success: true,
+                message: `You've already registered for the ${currentMonth} BURN gathering! We'll see you there.`,
+                alreadyRegistered: true
+            });
+        }
 
         const formData = new URLSearchParams();
         formData.append('api_key', SKRYBE_API_KEY);
@@ -138,6 +161,7 @@ export default async function handler(req, res) {
         let skrybeResponse = null;
         let skrybeSuccess = false;
         let skrybeError = null;
+        let isAlreadySubscribed = false;
 
         try {
             const skrybeRequest = await fetch(SKRYBE_API_URL, {
@@ -150,11 +174,8 @@ export default async function handler(req, res) {
             if (skrybeResponse.toLowerCase().includes('success') || skrybeResponse.trim() === '1') {
                 skrybeSuccess = true;
             } else if (skrybeResponse.toLowerCase().includes('already subscribed')) {
-                skrybeError = 'This email is already registered for BURN';
-                return res.status(400).json({
-                    success: false,
-                    message: skrybeError
-                });
+                skrybeSuccess = true;
+                isAlreadySubscribed = true;
             } else if (skrybeResponse.toLowerCase().includes('bounced')) {
                 skrybeError = 'This email address has bounced. Please use a valid email.';
                 return res.status(400).json({
@@ -189,10 +210,6 @@ export default async function handler(req, res) {
             });
         }
 
-        const client = await clientPromise;
-        const db = client.db('Fotia_db');
-        const burnCollection = db.collection('burn_subscribers');
-
         const subscriberRecord = {
             first_name: sanitizedFirstName,
             last_name: sanitizedLastName,
@@ -200,6 +217,7 @@ export default async function handler(req, res) {
             phone: sanitizedPhone,
             city: city,
             first_timer: first_timer === true || first_timer === 'true',
+            eventSession: eventSession, // Track which month/year they registered for 
             tags: tagString,
             consent: true,
             createdAt: new Date(),
@@ -211,19 +229,22 @@ export default async function handler(req, res) {
         const result = await burnCollection.insertOne(subscriberRecord);
 
         // Send custom branded welcome email via Skrybe Transactional API
-        try {
-            const { sendSkrybeEmail } = await import('./utils/skrybe.js');
-            await sendSkrybeEmail({
-                to: sanitizedEmail,
-                templateType: 'burn_welcome',
-                data: {
-                    name: fullName,
-                    city: city
-                }
-            });
-        } catch (emailError) {
-            console.error('Error sending welcome email:', emailError);
-            // We don't return error here because the registration was successful
+        // Only send if they are a NEW subscriber, existing members shouldn't receive it again
+        if (!isAlreadySubscribed) {
+            try {
+                const { sendSkrybeEmail } = await import('./utils/skrybe.js');
+                await sendSkrybeEmail({
+                    to: sanitizedEmail,
+                    templateType: 'burn_welcome',
+                    data: {
+                        name: fullName,
+                        city: city
+                    }
+                });
+            } catch (emailError) {
+                console.error('Error sending welcome email:', emailError);
+                // We don't return error here because the registration was successful
+            }
         }
 
         return res.status(201).json({

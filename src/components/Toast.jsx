@@ -5,7 +5,7 @@ const Toast = ({ message, type = 'success', isVisible, onClose }) => {
         if (isVisible) {
             const timer = setTimeout(() => {
                 onClose();
-            }, 7000); // Show for 7 seconds
+            }, 3000); // Show for 7 seconds
 
             return () => clearTimeout(timer);
         }
@@ -20,7 +20,7 @@ const Toast = ({ message, type = 'success', isVisible, onClose }) => {
     };
 
     return (
-        <div className="fixed top-4 left-0 right-0 z-50 px-4 flex justify-center animate-slideDown">
+        <div className="fixed top-4 left-0 right-0 z-[100] px-4 flex justify-center animate-slideDown">
             <div className={`${styles[type]} border-2 rounded-lg shadow-2xl px-4 py-4 md:px-6 flex items-start gap-3 md:gap-4 w-full md:min-w-[320px] md:max-w-md`}>
                 <div className="flex-shrink-0 pt-0.5">
                     {type === 'success' ? (
