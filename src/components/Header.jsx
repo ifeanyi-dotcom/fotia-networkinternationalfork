@@ -1,10 +1,10 @@
 import React from 'react';
-import logo from '../assets/Screenshot 2025-12-12 at 19.23.57.png';
+import logo from '../assets/headerLOGO.png';
 import { Link } from 'react-router-dom';
 
 const Header = ({ isAuthenticated, onLogout }) => {
     return (
-        <header className="bg-white shadow-md">
+        <header className="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50">
             <div className="container mx-auto px-4 py-2">
                 <div className="flex justify-between items-center">
 
