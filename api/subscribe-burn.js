@@ -114,6 +114,12 @@ export default async function handler(req, res) {
             'Jos': 'jos'
         };
 
+        // Construct Dynamic Tags for Skrybe Dashboard Visibility
+        const tagList = ['BURN 2026'];
+        tagList.push(`City: ${city}`);
+        tagList.push(first_timer ? 'Attendee: New' : 'Attendee: Returning');
+        const tagString = tagList.join(',');
+
         const formData = new URLSearchParams();
         formData.append('api_key', SKRYBE_API_KEY);
         formData.append('name', fullName);
@@ -124,6 +130,7 @@ export default async function handler(req, res) {
         formData.append('phone', sanitizedPhone);
         formData.append('city', cityMap[city]);
         formData.append('first_timer', first_timer ? 'true' : 'false');
+        formData.append('tags', tagString); // High-visibility tagging
         formData.append('gdpr', 'true');
         formData.append('boolean', 'true');
         formData.append('silent', 'true');
@@ -193,6 +200,7 @@ export default async function handler(req, res) {
             phone: sanitizedPhone,
             city: city,
             first_timer: first_timer === true || first_timer === 'true',
+            tags: tagString,
             consent: true,
             createdAt: new Date(),
             ipAddress: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '',
