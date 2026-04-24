@@ -151,8 +151,18 @@ export default async function handler(req, res) {
         formData.append('first_name', sanitizedFirstName);
         formData.append('last_name', sanitizedLastName);
         formData.append('phone', sanitizedPhone);
-        formData.append('city', cityMap[city]);
-        formData.append('first_timer', first_timer ? 'true' : 'false');
+        
+        // Custom Fields for Skrybe (Sendy) 
+        // We send both lowercase and capitalized keys to ensure it hits whichever Custom Field Tag Name you configured.
+        formData.append('City', city);
+        formData.append('city', city);
+        
+        const firstTimerValue = first_timer ? 'Yes' : 'No';
+        formData.append('First_Timer', firstTimerValue);
+        formData.append('first_timer', firstTimerValue);
+        formData.append('First_timer', firstTimerValue);
+        formData.append('first_timers', firstTimerValue);
+
         formData.append('tags', tagString); // High-visibility tagging
         formData.append('gdpr', 'true');
         formData.append('boolean', 'true');
