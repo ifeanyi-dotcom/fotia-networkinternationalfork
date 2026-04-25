@@ -28,7 +28,7 @@ export default function App() {
             <Route path="/" element={<MainLayout />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/donation-successful" element={<DonationSuccess />} />
-            <Route path="/burn-register" element={<BurnRegister />} />
+            <Route path="/burn" element={<BurnRegister />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
         </Routes>
     );

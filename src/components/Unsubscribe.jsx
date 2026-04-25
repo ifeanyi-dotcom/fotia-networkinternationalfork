@@ -58,14 +58,14 @@ const Unsubscribe = () => {
                                     <p className="text-gray-500 text-lg">We're sad to see you go. Are you sure you want to stop receiving updates from BURN?</p>
                                 </div>
                                 <div className="flex flex-col space-y-4 pt-4">
-                                    <button 
+                                    <button
                                         onClick={handleUnsubscribe}
                                         className="w-full bg-[#ff6b35] text-white font-bold px-8 py-4 rounded-2xl hover:opacity-90 transition-all duration-300 shadow-lg shadow-orange-100 transform hover:-translate-y-0.5"
                                     >
                                         Yes, Unsubscribe
                                     </button>
-                                    <Link 
-                                        to="/" 
+                                    <Link
+                                        to="/"
                                         className="w-full text-gray-400 font-medium px-8 py-2 hover:text-gray-600 transition-all duration-300"
                                     >
                                         No, keep me on the list
@@ -95,8 +95,8 @@ const Unsubscribe = () => {
                                 </div>
                                 <div className="pt-8 border-t border-gray-100">
                                     <p className="text-gray-500 mb-4">Made a mistake? We would be happy to have you back!</p>
-                                    <Link 
-                                        to="/burn-register" 
+                                    <Link
+                                        to="/burn"
                                         className="inline-block bg-[#ff6b35] text-white font-bold px-10 py-4 rounded-2xl hover:opacity-90 transition-all duration-300 shadow-lg shadow-orange-200"
                                     >
                                         Resubscribe to BURN
@@ -122,7 +122,7 @@ const Unsubscribe = () => {
                                     <p className="text-gray-600 text-lg leading-relaxed">{message}</p>
                                 </div>
                                 <div className="pt-6">
-                                    <button 
+                                    <button
                                         onClick={() => setStatus('confirming')}
                                         className="inline-block bg-gray-900 text-white font-semibold px-8 py-3 rounded-xl hover:bg-gray-800 transition-colors"
                                     >
