@@ -154,10 +154,11 @@ export default async function handler(req, res) {
         
         // Custom Fields for Skrybe (Sendy) 
         // We send both lowercase and capitalized keys to ensure it hits whichever Custom Field Tag Name you configured.
-        formData.append('City', city);
-        formData.append('city', city);
+        const lowercaseCity = cityMap[city] || city.toLowerCase();
+        formData.append('City', lowercaseCity);
+        formData.append('city', lowercaseCity);
         
-        const firstTimerValue = first_timer ? 'Yes' : 'No';
+        const firstTimerValue = first_timer ? 'true' : 'false';
         formData.append('First_Timer', firstTimerValue);
         formData.append('first_timer', firstTimerValue);
         formData.append('First_timer', firstTimerValue);
