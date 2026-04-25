@@ -23,12 +23,27 @@ const MainLayout = () => (
 );
 
 export default function App() {
+    const hostname = window.location.hostname;
+    // Check if the current hostname is the BURN subdomain
+    const isBurnSite = hostname.includes('burn.');
+
+    if (isBurnSite) {
+        return (
+            <Routes>
+                {/* For the BURN subdomain, the form is the root homepage */}
+                <Route path="/" element={<BurnRegister />} />
+                <Route path="/unsubscribe" element={<Unsubscribe />} />
+                {/* Catch-all for the subdomain to prevent 404s on non-existent paths */}
+                <Route path="*" element={<BurnRegister />} />
+            </Routes>
+        );
+    }
+
     return (
         <Routes>
             <Route path="/" element={<MainLayout />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/donation-successful" element={<DonationSuccess />} />
-            <Route path="/burn" element={<BurnRegister />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
         </Routes>
     );
